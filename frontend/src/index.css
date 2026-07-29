@@ -1,0 +1,154 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  --color-surface-0: #08090d;
+  --color-surface-1: #0f1117;
+  --color-surface-2: #161822;
+  --color-surface-3: #1e2030;
+  --color-surface-4: #262840;
+  
+  --color-border: #2a2d3e;
+  --color-border-bright: #3d4160;
+  
+  --color-text-primary: #e8e9f0;
+  --color-text-secondary: #9095a8;
+  --color-text-muted: #5a5f74;
+  
+  --color-accent: #6c8aff;
+  --color-accent-glow: #6c8aff33;
+  --color-accent-bright: #8ba4ff;
+  
+  --color-domain-architecture: #E8A87C;
+  --color-domain-biology: #41B3A3;
+  --color-domain-music: #C38D9E;
+  --color-domain-industrial: #85DCB8;
+  --color-domain-psychology: #E27D60;
+  --color-domain-nature: #659B5E;
+  --color-domain-fashion: #D4A5A5;
+  --color-domain-engineering: #5B8BA0;
+  --color-domain-history: #C9B1FF;
+  --color-domain-film: #F3C178;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--color-surface-0);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Premium Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 9999px;
+  border: 1px solid var(--color-surface-1);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-bright);
+}
+
+/* Glassmorphism Cards */
+.glass {
+  background: linear-gradient(135deg, rgba(22, 24, 34, 0.85), rgba(14, 15, 23, 0.95));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(61, 65, 96, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-bright {
+  background: linear-gradient(135deg, rgba(30, 32, 48, 0.95), rgba(22, 24, 34, 0.98));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--color-border-bright);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Derivation Badge Styling */
+.badge-curated {
+  background: rgba(108, 138, 255, 0.12);
+  color: #8ba4ff;
+  border: 1px solid rgba(108, 138, 255, 0.35);
+  box-shadow: 0 0 10px rgba(108, 138, 255, 0.15);
+}
+.badge-system {
+  background: rgba(65, 179, 163, 0.12);
+  color: #5fd4c0;
+  border: 1px solid rgba(65, 179, 163, 0.35);
+  box-shadow: 0 0 10px rgba(65, 179, 163, 0.15);
+}
+.badge-retrieved {
+  background: rgba(232, 168, 124, 0.12);
+  color: #f0b88a;
+  border: 1px solid rgba(232, 168, 124, 0.35);
+  box-shadow: 0 0 10px rgba(232, 168, 124, 0.15);
+}
+.badge-ai {
+  background: rgba(195, 141, 158, 0.15);
+  color: #e2b3c2;
+  border: 1px solid rgba(195, 141, 158, 0.4);
+  box-shadow: 0 0 12px rgba(195, 141, 158, 0.25);
+  animation: ai-pulse 3s ease-in-out infinite;
+}
+
+/* Keyframe Animations */
+@keyframes edge-flow {
+  0% { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes node-pulse {
+  0%, 100% { filter: drop-shadow(0 0 4px currentColor); }
+  50% { filter: drop-shadow(0 0 14px currentColor); }
+}
+
+@keyframes ai-pulse {
+  0%, 100% { border-color: rgba(195, 141, 158, 0.4); box-shadow: 0 0 8px rgba(195, 141, 158, 0.2); }
+  50% { border-color: rgba(195, 141, 158, 0.8); box-shadow: 0 0 16px rgba(195, 141, 158, 0.4); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Graph Node Glow Effects */
+.node-glow {
+  filter: drop-shadow(0 0 6px currentColor);
+  transition: filter 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.node-glow:hover {
+  filter: drop-shadow(0 0 18px currentColor);
+}
+
+/* Gradient Hero Text */
+.gradient-text {
+  background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 50%, #6c8aff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

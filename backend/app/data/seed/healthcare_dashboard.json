@@ -1,0 +1,332 @@
+{
+  "challenge": {
+    "id": "healthcare-dashboard",
+    "name": "Healthcare Dashboard",
+    "subtitle": "Designing clarity for critical decisions",
+    "description": "Design a healthcare monitoring dashboard that transforms complex patient data into actionable clinical insights. The challenge bridges medical precision with human-centered information design.",
+    "domains": ["biology", "architecture", "psychology", "industrial_design"],
+    "tags": ["data visualization", "clinical", "accessibility", "real-time monitoring"]
+  },
+  "inspirations": [
+    {
+      "id": "hc-circadian",
+      "name": "Circadian Rhythm Patterns",
+      "domain": "biology",
+      "description": "The 24-hour biological clock governing sleep-wake cycles, hormone release, and body temperature. Circadian patterns create natural rhythms of activity and rest that can inform temporal data visualization.",
+      "historical_context": "Discovered by Jean-Jacques d'Ortous de Mairan in 1729 through plant experiments. The 2017 Nobel Prize in Physiology was awarded for molecular mechanisms of circadian rhythms.",
+      "key_principles": [
+        {"name": "Temporal Rhythm", "description": "Biological systems follow predictable cyclical patterns that create natural groupings of activity and rest", "source_domain": "biology"},
+        {"name": "Phase Alignment", "description": "Multiple body systems synchronize their cycles to a master clock, creating layered temporal patterns", "source_domain": "biology"}
+      ],
+      "transferable_lessons": ["Time-based data should respect natural rhythms rather than arbitrary divisions", "Layered temporal views can reveal patterns invisible in flat timelines"],
+      "related_concepts": ["Ultradian rhythms", "Chronobiology", "Zeitgeber"],
+      "design_implications": ["Use radial or cyclical layouts for temporal health data", "Highlight phase transitions rather than arbitrary time boundaries"]
+    },
+    {
+      "id": "hc-wayfinding",
+      "name": "Hospital Wayfinding Systems",
+      "domain": "architecture",
+      "description": "Environmental graphic design systems that guide patients, visitors, and staff through complex hospital environments. Effective wayfinding reduces anxiety and cognitive load during stressful medical visits.",
+      "historical_context": "Modern hospital wayfinding evolved from Lance Wyman's 1968 Mexico City Olympics signage system. The field was formalized by environmental psychologist Romedi Passini's work on spatial cognition in the 1980s.",
+      "key_principles": [
+        {"name": "Progressive Disclosure", "description": "Reveal information in stages: orientation first, then direction, then identification", "source_domain": "architecture"},
+        {"name": "Cognitive Load Reduction", "description": "Minimize decision points and use consistent visual hierarchies to prevent information overload", "source_domain": "architecture"}
+      ],
+      "transferable_lessons": ["Complex information environments need clear entry points and progressive detail", "Color-coding zones reduces cognitive load more than text labels alone"],
+      "related_concepts": ["Environmental psychology", "Signage hierarchy", "Desire paths"],
+      "design_implications": ["Dashboard navigation should mirror wayfinding: overview → zone → detail", "Use spatial metaphors to organize clinical data domains"]
+    },
+    {
+      "id": "hc-triage",
+      "name": "Emergency Triage Color Systems",
+      "domain": "industrial_design",
+      "description": "Color-coded priority classification used in emergency medicine to rapidly sort patients by severity. The system must be instantly readable under stress by diverse medical personnel.",
+      "historical_context": "Triage originated with Dominique Jean Larrey, Napoleon's surgeon, during the Napoleonic Wars. Modern color-coded systems (START, JumpSTART) were standardized in the 1980s-90s.",
+      "key_principles": [
+        {"name": "Severity Encoding", "description": "Map critical states to universally recognized warning colors that function across cultures and lighting conditions", "source_domain": "industrial_design"},
+        {"name": "Glanceable Priority", "description": "The most critical information must be perceivable in under one second", "source_domain": "industrial_design"}
+      ],
+      "transferable_lessons": ["Color alone cannot carry severity — combine with shape, position, and size", "Systems used under stress must reduce ambiguity to near zero"],
+      "related_concepts": ["ANSI safety colors", "Manchester Triage System", "Alert fatigue"],
+      "design_implications": ["Use established medical severity palettes rather than arbitrary color choices", "Critical alerts must be distinguishable even with color vision deficiency"]
+    },
+    {
+      "id": "hc-bauhaus",
+      "name": "Bauhaus Information Hierarchy",
+      "domain": "architecture",
+      "description": "The Bauhaus school's systematic approach to visual hierarchy through geometry, proportion, and typographic scale. Their grid systems created order from complexity while maintaining aesthetic integrity.",
+      "historical_context": "Founded by Walter Gropius in 1919 in Weimar, Germany. Josef Müller-Brockmann later codified Bauhaus grid principles into the Swiss International Typographic Style in the 1950s-60s.",
+      "key_principles": [
+        {"name": "Grid Rationalism", "description": "All visual elements should align to a mathematical grid that creates implicit relationships between content areas", "source_domain": "architecture"},
+        {"name": "Form Follows Function", "description": "Visual treatment should emerge from content requirements, not decorative impulse", "source_domain": "architecture"}
+      ],
+      "transferable_lessons": ["Mathematical proportion systems create visual harmony without explicit decoration", "Consistent spacing conveys relationships as effectively as explicit grouping"],
+      "related_concepts": ["Swiss typography", "Modular scale", "Gestalt principles"],
+      "design_implications": ["Establish an 8px grid system for consistent spatial relationships", "Use type scale ratios (1.25, 1.333, 1.5) rather than arbitrary font sizes"]
+    },
+    {
+      "id": "hc-pharma",
+      "name": "Pharmaceutical Packaging Design",
+      "domain": "industrial_design",
+      "description": "The design of medication labels and packaging that must convey critical dosage, interaction, and safety information in extremely constrained space while preventing dangerous confusion between products.",
+      "historical_context": "The ISMP (Institute for Safe Medication Practices) has documented thousands of medication errors caused by look-alike/sound-alike packaging since the 1990s. Tall Man lettering was introduced as a countermeasure.",
+      "key_principles": [
+        {"name": "Error-Proof Differentiation", "description": "Similar items must be visually distinct enough to prevent life-threatening confusion under fatigue and time pressure", "source_domain": "industrial_design"},
+        {"name": "Information Layering", "description": "Organize information by urgency: immediate (drug name, dose) → important (interactions) → reference (ingredients)", "source_domain": "industrial_design"}
+      ],
+      "transferable_lessons": ["In high-stakes contexts, visual similarity is a design failure, not aesthetic consistency", "Tall Man lettering principle: emphasize the differentiating parts of similar labels"],
+      "related_concepts": ["Tall Man lettering", "ISMP guidelines", "Unit-dose packaging"],
+      "design_implications": ["Dashboard widgets for different patients must be instantly distinguishable", "Critical data should follow information layering: urgent → important → reference"]
+    },
+    {
+      "id": "hc-neural",
+      "name": "Neural Pathway Visualization",
+      "domain": "biology",
+      "description": "Scientific visualization techniques for mapping neural connectivity in the brain. Tractography and connectome diagrams reveal how information flows through complex biological networks.",
+      "historical_context": "Santiago Ramón y Cajal's neuron drawings in the 1890s established the foundation. Modern diffusion tensor imaging (DTI) tractography emerged in the late 1990s, enabling 3D neural pathway visualization.",
+      "key_principles": [
+        {"name": "Flow Visualization", "description": "Represent connections as continuous flows rather than discrete links to convey the dynamic nature of information transfer", "source_domain": "biology"},
+        {"name": "Hierarchical Clustering", "description": "Group densely connected nodes into functional regions while preserving cross-region connections", "source_domain": "biology"}
+      ],
+      "transferable_lessons": ["Connection density itself carries meaning — areas of high connectivity represent processing hubs", "Color-coding pathways by function reveals system architecture"],
+      "related_concepts": ["Connectomics", "DTI tractography", "Network neuroscience"],
+      "design_implications": ["Data relationships in dashboards can be shown as flowing connections, not just adjacency", "Cluster related metrics into functional groups with visible cross-group links"]
+    },
+    {
+      "id": "hc-japanese-garden",
+      "name": "Japanese Garden Flow Design",
+      "domain": "nature",
+      "description": "The principles of spatial composition in Japanese gardens where carefully orchestrated views, pathways, and transitions create contemplative journeys. Every element serves both aesthetic and experiential purposes.",
+      "historical_context": "Rooted in Heian period (794-1185) garden design. The Sakuteiki, the oldest known garden design manual (11th century), codified principles of stone placement, water flow, and borrowed scenery (shakkei).",
+      "key_principles": [
+        {"name": "Borrowed Scenery (Shakkei)", "description": "Incorporate elements beyond the immediate boundary to extend perceived space and connect local context to larger systems", "source_domain": "nature"},
+        {"name": "Controlled Revelation", "description": "Guide attention through sequential discovery rather than presenting everything simultaneously", "source_domain": "nature"}
+      ],
+      "transferable_lessons": ["Negative space is as important as content — it provides cognitive rest", "Sequential revelation reduces overwhelm in complex information environments"],
+      "related_concepts": ["Ma (negative space)", "Wabi-sabi", "Karesansui (dry garden)"],
+      "design_implications": ["Use whitespace strategically to create breathing room between data-dense panels", "Design dashboard navigation as a journey with controlled information revelation"]
+    },
+    {
+      "id": "hc-cockpit",
+      "name": "Aircraft Cockpit Instrument Clusters",
+      "domain": "engineering",
+      "description": "The design of flight instrument panels that must present dozens of critical parameters simultaneously while supporting rapid scanning patterns and immediate anomaly detection.",
+      "historical_context": "The 'basic T' instrument layout was standardized after WWII to match natural eye scanning patterns. Glass cockpit revolution in the 1980s (Boeing 757/767) replaced individual gauges with integrated CRT displays.",
+      "key_principles": [
+        {"name": "Scan Pattern Optimization", "description": "Arrange instruments to match natural eye movement patterns, placing the most referenced instruments at scan center", "source_domain": "engineering"},
+        {"name": "Anomaly Detection by Deviation", "description": "When all instruments show normal, they should present a recognizable visual pattern. Any deviation from this pattern immediately signals anomaly.", "source_domain": "engineering"}
+      ],
+      "transferable_lessons": ["The 'dark cockpit' philosophy: normal states should be visually quiet, abnormal states should be visually loud", "Consistent gauge orientations create a visual gestalt where deviation is instantly apparent"],
+      "related_concepts": ["Glass cockpit", "Head-up display", "Situational awareness"],
+      "design_implications": ["Arrange dashboard widgets to support clinical scan patterns (most critical at center)", "Design 'normal' state as a visually quiet baseline so anomalies stand out"]
+    },
+    {
+      "id": "hc-emotion-color",
+      "name": "Emotional Color Psychology",
+      "domain": "psychology",
+      "description": "Research on how colors influence emotional state, perceived urgency, and cognitive processing speed. Color associations are partially cultural and partially rooted in evolutionary responses.",
+      "historical_context": "Faber Birren's 1950 'Color Psychology and Color Therapy' formalized the field. Andrew Elliot and Markus Maier's 2014 meta-analysis established robust effects of red on attention and avoidance behavior.",
+      "key_principles": [
+        {"name": "Arousal Modulation", "description": "Warm colors (red, orange) increase physiological arousal and perceived urgency; cool colors (blue, green) promote calm analytical processing", "source_domain": "psychology"},
+        {"name": "Cultural Color Variance", "description": "Color meanings vary across cultures — what signifies danger in one context may signify prosperity in another", "source_domain": "psychology"}
+      ],
+      "transferable_lessons": ["Use color temperature to modulate cognitive mode: warm for alerts, cool for analysis", "Avoid relying on culturally specific color meanings in global healthcare contexts"],
+      "related_concepts": ["Color semiotics", "Chromotherapy", "Color constancy"],
+      "design_implications": ["Reserve warm colors exclusively for urgency indicators", "Use cool-toned palettes for sustained monitoring views to reduce alert fatigue"]
+    },
+    {
+      "id": "hc-butterfly",
+      "name": "Butterfly Wing Pattern Recognition",
+      "domain": "biology",
+      "description": "The visual recognition systems used by biologists to identify species through wing pattern analysis. Complex information is encoded in spatial frequency, color distribution, and symmetry patterns.",
+      "historical_context": "H.F. Nijhout's 1991 'Development and Evolution of Butterfly Wing Patterns' established the nymphalid ground plan. Modern computational approaches use pattern recognition algorithms derived from these biological classification systems.",
+      "key_principles": [
+        {"name": "Pattern as Identity", "description": "Complex identity can be encoded in a small set of repeatable visual parameters: symmetry, frequency, color distribution", "source_domain": "biology"},
+        {"name": "Redundant Encoding", "description": "Critical identification information is encoded simultaneously in multiple visual channels: color, shape, position, and texture", "source_domain": "biology"}
+      ],
+      "transferable_lessons": ["Multi-channel encoding (color + shape + position) is more robust than single-channel", "Symmetric patterns are processed faster by the human visual system"],
+      "related_concepts": ["Computational taxonomy", "Biometric patterns", "Visual search efficiency"],
+      "design_implications": ["Patient status indicators should encode state across multiple visual channels simultaneously", "Use small multiples with consistent visual structure for rapid comparison across patients"]
+    },
+    {
+      "id": "hc-swiss-rail",
+      "name": "Swiss Railway Timetable Design",
+      "domain": "industrial_design",
+      "description": "The Swiss Federal Railways timetable system represents one of the most information-dense yet readable data displays ever created. It encodes complex schedule data in a compact format using precise typography and systematic color.",
+      "historical_context": "SBB's visual identity was designed by Josef Müller-Brockmann and Hans Neuburg from the 1950s. The timetable display system evolved alongside the famous SBB railway clock designed by Hans Hilfiker in 1944.",
+      "key_principles": [
+        {"name": "Density Without Clutter", "description": "Achieve high information density through systematic typography, precise alignment, and strategic use of whitespace rather than through visual decoration", "source_domain": "industrial_design"},
+        {"name": "Temporal Precision", "description": "Represent time with absolute precision and consistency, creating visual patterns that communicate schedule regularity and exceptions", "source_domain": "industrial_design"}
+      ],
+      "transferable_lessons": ["Systematic typography can carry enormous information density without feeling cluttered", "Regular patterns make exceptions immediately visible"],
+      "related_concepts": ["Müller-Brockmann grid systems", "Swiss International Style", "Information density"],
+      "design_implications": ["Use systematic type scales and alignment to maximize data density in vital sign displays", "Design regular visual rhythms so clinical anomalies break the pattern visibly"]
+    },
+    {
+      "id": "hc-medical-imaging",
+      "name": "Medical Imaging Interface Design",
+      "domain": "engineering",
+      "description": "The interface design of radiology and medical imaging workstations where clinicians navigate through volumetric data, compare temporal sequences, and annotate findings in high-stakes diagnostic contexts.",
+      "historical_context": "DICOM (Digital Imaging and Communications in Medicine) standard established in 1993 unified medical image formats. Modern PACS (Picture Archiving and Communication Systems) emerged in the early 2000s.",
+      "key_principles": [
+        {"name": "Contextual Comparison", "description": "Place current data alongside historical data to make temporal changes immediately visible", "source_domain": "engineering"},
+        {"name": "Annotation Persistence", "description": "Clinical observations must be permanently attached to the data they reference, surviving format changes and system migrations", "source_domain": "engineering"}
+      ],
+      "transferable_lessons": ["Temporal comparison is more diagnostic than snapshot views", "Data and interpretation should be permanently linked, not separated into different views"],
+      "related_concepts": ["DICOM standard", "PACS systems", "Hanging protocols"],
+      "design_implications": ["Support temporal comparison layouts: current vs. previous readings side-by-side", "Annotations and clinical notes should overlay directly on the data they reference"]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-circadian-cockpit",
+      "source_id": "hc-circadian",
+      "target_id": "hc-cockpit",
+      "edge_type": "functional_similarity",
+      "weight": 0.7,
+      "relationship_description": "Both circadian rhythms and cockpit instruments organize temporal information for sustained monitoring. Circadian patterns suggest natural rhythms for organizing monitoring shifts; cockpit design provides the instrument layout patterns.",
+      "transferable_insight": "Design monitoring layouts that align with biological attention rhythms — high-density during peak alertness, simplified during fatigue-prone periods.",
+      "evidence": ["Circadian variation in medical error rates peaks during night shifts", "Cockpit fatigue management protocols align display complexity with alertness cycles"]
+    },
+    {
+      "id": "e-wayfinding-garden",
+      "source_id": "hc-wayfinding",
+      "target_id": "hc-japanese-garden",
+      "edge_type": "structural_analogy",
+      "weight": 0.8,
+      "relationship_description": "Both hospital wayfinding and Japanese gardens orchestrate sequential spatial experiences through controlled revelation. Wayfinding provides the practical framework; the garden provides the aesthetic and experiential quality.",
+      "transferable_insight": "Dashboard navigation should feel like a guided journey — revealing complexity progressively rather than presenting all data simultaneously.",
+      "evidence": ["Wayfinding principle of progressive disclosure mirrors the garden principle of controlled revelation", "Both traditions use spatial hierarchy to manage cognitive load"]
+    },
+    {
+      "id": "e-triage-emotion",
+      "source_id": "hc-triage",
+      "target_id": "hc-emotion-color",
+      "edge_type": "functional_similarity",
+      "weight": 0.85,
+      "relationship_description": "Triage color systems and emotional color psychology both leverage color to communicate urgency and priority. Triage provides the medical standard; color psychology explains why these associations work.",
+      "transferable_insight": "Clinical alert colors should be grounded in both medical convention (triage standards) and perceptual science (arousal modulation) rather than arbitrary aesthetic preference.",
+      "evidence": ["Triage red/yellow/green maps directly to warm/cool arousal spectrum in color psychology", "Both systems account for the need for differentiation under stress"]
+    },
+    {
+      "id": "e-bauhaus-swiss",
+      "source_id": "hc-bauhaus",
+      "target_id": "hc-swiss-rail",
+      "edge_type": "structural_analogy",
+      "weight": 0.9,
+      "relationship_description": "Bauhaus grid systems directly influenced Swiss railway timetable design through the International Typographic Style. Both prioritize systematic, mathematical approaches to information organization.",
+      "transferable_insight": "A rigorous underlying grid system is the foundation for achieving high information density without visual chaos.",
+      "evidence": ["Müller-Brockmann explicitly built on Bauhaus grid principles for SBB", "Both traditions demonstrate that mathematical proportion creates visual harmony"]
+    },
+    {
+      "id": "e-neural-butterfly",
+      "source_id": "hc-neural",
+      "target_id": "hc-butterfly",
+      "edge_type": "visual_similarity",
+      "weight": 0.6,
+      "relationship_description": "Neural pathway visualization and butterfly wing pattern recognition both encode complex identity information through spatial frequency and color distribution patterns.",
+      "transferable_insight": "Multi-channel visual encoding (using color, shape, position, and density simultaneously) creates more robust pattern recognition than any single channel alone.",
+      "evidence": ["Both systems rely on redundant encoding for reliability", "Biological pattern recognition operates on similar spatial frequency channels"]
+    },
+    {
+      "id": "e-pharma-triage",
+      "source_id": "hc-pharma",
+      "target_id": "hc-triage",
+      "edge_type": "functional_similarity",
+      "weight": 0.75,
+      "relationship_description": "Both pharmaceutical packaging and triage systems operate under the constraint that visual confusion can be life-threatening. Both must achieve instant differentiation under stress and fatigue.",
+      "transferable_insight": "In high-stakes interfaces, visual similarity between distinct items is a design failure. Differentiation should be redundantly encoded across multiple visual channels.",
+      "evidence": ["ISMP medication error reports parallel triage misclassification studies", "Both fields mandate multi-channel differentiation (color + shape + position)"]
+    },
+    {
+      "id": "e-cockpit-medical",
+      "source_id": "hc-cockpit",
+      "target_id": "hc-medical-imaging",
+      "edge_type": "functional_similarity",
+      "weight": 0.8,
+      "relationship_description": "Aircraft cockpits and medical imaging workstations both require sustained monitoring of multiple data streams with rapid anomaly detection. Both evolved from individual instruments to integrated display systems.",
+      "transferable_insight": "The 'dark cockpit' philosophy transfers directly to clinical monitoring: normal states should be visually quiet so that anomalies command immediate attention.",
+      "evidence": ["Glass cockpit evolution parallels PACS evolution from individual films to integrated displays", "Both domains discovered that instrument consolidation improved detection rates"]
+    },
+    {
+      "id": "e-garden-emotion",
+      "source_id": "hc-japanese-garden",
+      "target_id": "hc-emotion-color",
+      "edge_type": "behavioral_analogy",
+      "weight": 0.55,
+      "relationship_description": "Japanese garden design and emotional color psychology both manipulate environmental qualities to influence psychological state. Gardens use spatial composition; color psychology uses chromatic properties.",
+      "transferable_insight": "The dashboard environment itself — through color temperature, spatial density, and visual rhythm — actively modulates clinician cognitive state.",
+      "evidence": ["Garden design traditions explicitly aim to cultivate specific mental states", "Color psychology demonstrates measurable effects on cognitive processing mode"]
+    },
+    {
+      "id": "e-wayfinding-triage",
+      "source_id": "hc-wayfinding",
+      "target_id": "hc-triage",
+      "edge_type": "transferable_principle",
+      "weight": 0.7,
+      "relationship_description": "Wayfinding's progressive disclosure principle complements triage's severity encoding. Together they suggest a navigation model where dashboard depth follows clinical priority.",
+      "transferable_insight": "Dashboard information architecture should follow triage logic: most urgent at surface level, progressively detailed as clinician drills down.",
+      "evidence": ["Emergency department spatial layouts already combine wayfinding zones with triage color coding", "Both systems serve users under cognitive load and time pressure"]
+    },
+    {
+      "id": "e-circadian-neural",
+      "source_id": "hc-circadian",
+      "target_id": "hc-neural",
+      "edge_type": "structural_analogy",
+      "weight": 0.65,
+      "relationship_description": "Circadian rhythms and neural pathways both represent biological information flow systems. Circadian patterns organize temporal flow; neural pathways organize spatial connectivity flow.",
+      "transferable_insight": "Health data has both temporal rhythms (circadian) and spatial connectivity patterns (neural). The dashboard should support both views.",
+      "evidence": ["Both systems exhibit hierarchical organization with master controllers and downstream effectors", "Both use flow and connectivity as primary organizing metaphors"]
+    },
+    {
+      "id": "e-swiss-cockpit",
+      "source_id": "hc-swiss-rail",
+      "target_id": "hc-cockpit",
+      "edge_type": "functional_similarity",
+      "weight": 0.75,
+      "relationship_description": "Swiss timetable design and cockpit instruments both achieve extreme information density while maintaining rapid readability. Both serve operators who must scan large amounts of data under time constraints.",
+      "transferable_insight": "Systematic typography and consistent visual rhythm enable high-density data displays that remain scannable under time pressure.",
+      "evidence": ["Both systems rely on typographic systems rather than visual decoration to organize information", "Both optimize for rapid scan patterns with anomaly detection"]
+    },
+    {
+      "id": "e-bauhaus-wayfinding",
+      "source_id": "hc-bauhaus",
+      "target_id": "hc-wayfinding",
+      "edge_type": "structural_analogy",
+      "weight": 0.7,
+      "relationship_description": "Bauhaus grid rationalism provides the mathematical foundation for wayfinding's spatial hierarchy. Grids create implicit navigation paths through content.",
+      "transferable_insight": "A consistent grid system creates natural wayfinding within the dashboard itself — users develop spatial memory for where different types of information live.",
+      "evidence": ["Bauhaus grid principles directly influenced environmental graphic design", "Consistent spatial organization enables users to build navigational mental models"]
+    },
+    {
+      "id": "e-butterfly-pharma",
+      "source_id": "hc-butterfly",
+      "target_id": "hc-pharma",
+      "edge_type": "transferable_principle",
+      "weight": 0.55,
+      "relationship_description": "Butterfly wing pattern recognition and pharmaceutical packaging share the challenge of creating reliable visual differentiation within a family of similar forms.",
+      "transferable_insight": "Multi-channel redundant encoding (color + shape + position + texture) prevents dangerous confusion between visually similar data elements.",
+      "evidence": ["Both domains demonstrate that single-channel differentiation (color alone or shape alone) is insufficient for reliable identification", "Redundant encoding is a biological survival mechanism applicable to safety-critical design"]
+    },
+    {
+      "id": "e-medical-circadian",
+      "source_id": "hc-medical-imaging",
+      "target_id": "hc-circadian",
+      "edge_type": "functional_similarity",
+      "weight": 0.5,
+      "relationship_description": "Medical imaging's contextual comparison principle connects with circadian rhythm's temporal patterning — both emphasize that data is meaningful only in temporal context.",
+      "transferable_insight": "Patient data should always be displayed alongside its temporal context — a heart rate of 90 means different things at 3am vs 3pm.",
+      "evidence": ["Radiology depends on comparing current images with prior studies", "Clinical values have known circadian variation patterns"]
+    },
+    {
+      "id": "e-emotion-garden-neural",
+      "source_id": "hc-emotion-color",
+      "target_id": "hc-neural",
+      "edge_type": "behavioral_analogy",
+      "weight": 0.45,
+      "relationship_description": "Emotional color processing occurs through neural pathways that bypass conscious analysis — color responses are faster than cognitive evaluation. Neural pathway visualization reveals these pre-conscious processing routes.",
+      "transferable_insight": "Critical status colors should leverage pre-cognitive neural pathways (fast, automatic response) rather than requiring conscious interpretation.",
+      "evidence": ["Color processing in V4 cortex precedes conscious evaluation", "Emergency response training leverages automatic color-response associations"]
+    }
+  ]
+}
