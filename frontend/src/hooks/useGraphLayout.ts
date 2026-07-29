@@ -37,7 +37,7 @@ export function useGraphLayout(
     return () => {
       simulation.stop();
     };
-  }, [nodes, edges, width, height]); // We might need to handle dependency deeply to avoid re-simulating on every minor change
+  }, [nodes, edges, width, height]);
 
   const dragStart = useCallback((id: string) => {
     if (simulationRef.current) {

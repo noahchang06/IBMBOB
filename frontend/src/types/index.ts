@@ -245,14 +245,6 @@ export interface PresetChallenge {
 }
 
 // === Export ===
-export interface ExportRequest {
-  challenge_name: string;
-  design_tokens: DesignSystem;
-  graph: ReasoningGraph;
-  selected_inspirations: Inspiration[];
-  constraints: ConstraintSet;
-}
-
 export interface ExportPackage {
   challenge_name: string;
   design_tokens: DesignSystem;

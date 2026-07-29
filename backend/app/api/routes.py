@@ -1,25 +1,68 @@
-from fastapi import APIRouter, HTTPException, Depends
+import logging
+from fastapi import APIRouter, HTTPException
 from typing import Any, Dict
 from pydantic import BaseModel
+from app.config import settings
 from app.data.knowledge_base import knowledge_base
 from app.models.challenge import ChallengeListResponse
 from app.models.graph import ReasoningGraph
 from app.models.constraints import ConstraintSet, ConstraintKey
 from app.models.design_system import DesignSystem
-from app.models.export import ExportRequest, ExportPackage
+from app.models.export import ExportPackage
 from app.models.explanation import ExplanationRequest, ExplanationResponse
 from app.services.graph_service import GraphService
 from app.services.constraint_engine import ConstraintEngine
 from app.services.design_system_service import DesignSystemService
 from app.services.explanation_service import ExplanationService
-from app.services.mock_granite import MockGraniteAdapter
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api")
 
 graph_service = GraphService()
 constraint_engine = ConstraintEngine()
 design_system_service = DesignSystemService()
-granite_adapter = MockGraniteAdapter()
+
+
+def _make_granite_adapter():
+    """
+    Return the appropriate GraniteAdapter based on configuration.
+
+    USE_MOCK_GRANITE=True  (default) → MockGraniteAdapter (no credentials needed)
+    USE_MOCK_GRANITE=False           → WatsonXGraniteAdapter (requires .env creds)
+
+    The real adapter is imported lazily so the mock path has zero SDK overhead.
+    """
+    if settings.USE_MOCK_GRANITE:
+        from app.services.mock_granite import MockGraniteAdapter
+        return MockGraniteAdapter()
+
+    if not settings.GRANITE_API_KEY:
+        logger.warning(
+            "USE_MOCK_GRANITE=False but GRANITE_API_KEY is empty. "
+            "Falling back to MockGraniteAdapter."
+        )
+        from app.services.mock_granite import MockGraniteAdapter
+        return MockGraniteAdapter()
+
+    if not settings.WATSONX_PROJECT_ID:
+        logger.warning(
+            "USE_MOCK_GRANITE=False but WATSONX_PROJECT_ID is empty. "
+            "Falling back to MockGraniteAdapter."
+        )
+        from app.services.mock_granite import MockGraniteAdapter
+        return MockGraniteAdapter()
+
+    from app.services.watsonx_granite import WatsonXGraniteAdapter
+    logger.info(
+        "IBM Granite enabled — model=%s endpoint=%s",
+        settings.GRANITE_MODEL_ID,
+        settings.GRANITE_API_URL,
+    )
+    return WatsonXGraniteAdapter()
+
+
+granite_adapter = _make_granite_adapter()
 explanation_service = ExplanationService(granite_adapter)
 
 class BuildGraphRequest(BaseModel):
@@ -35,7 +78,11 @@ class GenerateDesignSystemRequest(BaseModel):
 
 @router.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "granite_mode": "mock" if settings.USE_MOCK_GRANITE else "watsonx",
+        "granite_model": settings.GRANITE_MODEL_ID,
+    }
 
 @router.get("/challenges", response_model=ChallengeListResponse)
 async def list_challenges():
@@ -108,13 +155,20 @@ async def export_package(req: ExportRequestBody):
     summary = await granite_adapter.generate_reasoning_summary(
         req.graph.model_dump(), req.constraints, ds.model_dump()
     )
-    inspirations = knowledge_base.get_inspirations(req.challenge_id)
-    
+    all_inspirations = knowledge_base.get_inspirations(req.challenge_id)
+    if req.inspiration_ids:
+        selected = [i for i in all_inspirations if i.id in req.inspiration_ids]
+    else:
+        selected = all_inspirations
+
+    challenge = knowledge_base.get_challenge(req.challenge_id)
+    challenge_name = challenge.name if challenge else req.challenge_id.replace("-", " ").title()
+
     return ExportPackage(
-        challenge_name=req.challenge_id.replace("-", " ").title(),
+        challenge_name=challenge_name,
         design_tokens=ds,
         graph=req.graph,
-        selected_inspirations=inspirations,
+        selected_inspirations=selected,
         constraints=req.constraints,
-        reasoning_summary_markdown=summary
+        reasoning_summary_markdown=summary,
     )

@@ -52,30 +52,41 @@ To ensure 100% feasibility and eliminate fake or magical claims:
 ## 🚀 Quickstart Guide
 
 ### Prerequisites
-- Python 3.10+
+- Python **3.12** (required — `pydantic-core` does not build on 3.14; 3.11 is not tested)
 - Node.js 18+
 
 ### 1. Backend Setup (FastAPI)
 ```bash
 cd backend
-python -m venv .venv
+
+# macOS: install Python 3.12 via Homebrew if needed
+# brew install python@3.12
+
+python3.12 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-pip install pytest
 
-# Run automated backend test suite
-python -m pytest tests/
+# Run automated backend test suite (8 tests)
+python -m pytest tests/ -v
 
-# Start server
+# Start development server (mock Granite, no credentials needed)
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+# --- Optional: enable live IBM Granite ---
+# Create backend/.env with:
+#   USE_MOCK_GRANITE=False
+#   GRANITE_API_URL=https://us-south.ml.cloud.ibm.com
+#   GRANITE_API_KEY=<your IBM Cloud API key>
+#   WATSONX_PROJECT_ID=<your watsonx.ai project ID>
+#   GRANITE_MODEL_ID=ibm/granite-13b-instruct-v2
 ```
 
 ### 2. Frontend Setup (React + Vite + Tailwind)
 ```bash
 cd frontend
 npm install
-npm run build
-npm run dev
+npm run build   # TypeScript compile + Vite bundle
+npm run dev     # Start dev server with API proxy
 ```
 
 Open `http://localhost:5173` in your browser.

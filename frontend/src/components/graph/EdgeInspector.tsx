@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { DerivationBadge } from '../shared/DerivationBadge';
 import { EDGE_TYPE_COLORS, EDGE_TYPE_LABELS, DOMAIN_COLORS } from '../../types';
@@ -7,6 +7,7 @@ import { useApi } from '../../hooks/useApi';
 export function EdgeInspector() {
   const { selectedEdge, graph, setActivePanel, setExplanation, setExplanationLoading } = useAppStore();
   const api = useApi();
+  const [explainError, setExplainError] = useState<string | null>(null);
 
   if (!selectedEdge || !graph) return null;
 
@@ -18,13 +19,14 @@ export function EdgeInspector() {
   const edgeColor = EDGE_TYPE_COLORS[selectedEdge.edge_type];
 
   const handleExplain = async () => {
+    setExplainError(null);
     setActivePanel('explainable');
     setExplanationLoading(true);
     try {
       const result = await api.explainEdge(selectedEdge.id, sourceNode, targetNode, selectedEdge);
       setExplanation(result);
     } catch (err) {
-      console.error(err);
+      setExplainError(err instanceof Error ? err.message : 'Explanation request failed.');
     } finally {
       setExplanationLoading(false);
     }
@@ -70,32 +72,41 @@ export function EdgeInspector() {
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-text-muted mb-3 border-b border-border pb-2">Relationship Description</h3>
+        <h3 className="section-header">Relationship Description</h3>
         <p className="text-sm text-text-secondary leading-relaxed">{selectedEdge.relationship_description}</p>
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-text-muted mb-3 border-b border-border pb-2">Transferable Insight</h3>
-        <div className="border-l-2 pl-4 py-1 my-4 italic text-text-primary" style={{ borderColor: edgeColor }}>
+        <h3 className="section-header">Transferable Insight</h3>
+        <div className="border-l-2 pl-4 py-1 my-3 italic text-text-primary text-sm" style={{ borderColor: edgeColor }}>
           "{selectedEdge.transferable_insight}"
         </div>
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-text-muted mb-3 border-b border-border pb-2">Evidence</h3>
-        <ul className="list-disc pl-5 space-y-2 text-sm text-text-secondary">
+        <h3 className="section-header">Evidence</h3>
+        <ul className="list-disc pl-5 space-y-1.5 text-sm text-text-secondary">
           {selectedEdge.evidence.map((ev, idx) => (
             <li key={idx}>{ev}</li>
           ))}
         </ul>
       </div>
 
-      <div className="pt-4">
+      {explainError && (
+        <div
+          role="alert"
+          className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-xs text-red-400"
+        >
+          <strong>Explanation failed:</strong> {explainError}
+        </div>
+      )}
+
+      <div className="pt-2">
         <button
           onClick={handleExplain}
           className="w-full py-3 bg-surface-2 hover:bg-surface-3 border border-border text-text-primary font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Explain Connection
         </button>
       </div>
