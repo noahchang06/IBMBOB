@@ -1,0 +1,26 @@
+{
+  "challenge": {
+    "id": "your-challenge-id",
+    "name": "Your Challenge Name",
+    "subtitle": "A brief, catchy subtitle",
+    "description": "A longer description of your challenge, what it's about, and what makes it interesting.",
+    "domains": ["architecture", "biology", "music", "industrial_design", "psychology", "nature", "fashion", "engineering", "history", "film", "economics", "graphic_design"],
+    "tags": ["tag1", "tag2", "tag3"]
+  },
+  "inspirations": [
+    {
+      "id": "your-inspiration-id-1",
+      "name": "First Inspiration",
+      "domain": "biology",
+      "description": "A detailed description of the first inspirational concept.",
+      "historical_context": "The history and origin of this concept.",
+      "key_principles": [
+        {"name": "Principle Name", "description": "Description of a key principle.", "source_domain": "biology"}
+      ],
+      "transferable_lessons": ["A lesson that can be learned from this inspiration."],
+      "related_concepts": ["A related concept."],
+      "design_implications": ["How this inspiration could impact design."]
+    }
+  ],
+  "edges": []
+}

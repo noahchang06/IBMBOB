@@ -32,6 +32,8 @@ interface AppState {
   // Inspirations (loaded with challenge)
   inspirations: Record<string, Inspiration>;
   setInspirations: (list: Inspiration[]) => void;
+  addInspiration: (inspiration: Inspiration) => void;
+  addNodeAndEdges: (node: GraphNode, edges: GraphEdge[]) => void;
 
   // Constraints
   constraints: ConstraintSet;
@@ -58,12 +60,10 @@ interface AppState {
 
   // Reset
   reset: () => void;
+  resetWorkspace: () => void;
 }
 
-const initialState = {
-  view: 'discovery' as AppView,
-  activePanel: 'inspector' as WorkspacePanel,
-  challenges: [],
+const workspaceState = {
   selectedChallenge: null,
   graph: null,
   selectedNode: null,
@@ -74,6 +74,13 @@ const initialState = {
   constraintEffects: [],
   designSystem: null,
   currentExplanation: null,
+};
+
+const initialState = {
+  view: 'discovery' as AppView,
+  activePanel: 'inspector' as WorkspacePanel,
+  challenges: [],
+  ...workspaceState,
   explanationLoading: false,
   graphLoading: false,
   constraintsApplying: false,
@@ -101,6 +108,20 @@ export const useAppStore = create<AppState>((set) => ({
     set({ inspirations: map });
   },
 
+  addInspiration: (inspiration) => set((state) => ({
+    inspirations: { ...state.inspirations, [inspiration.id]: inspiration }
+  })),
+
+  addNodeAndEdges: (node, edges) => set((state) => ({
+    graph: state.graph
+      ? { 
+          ...state.graph, 
+          nodes: [...state.graph.nodes, node],
+          edges: [...state.graph.edges, ...edges],
+        }
+      : null
+  })),
+
   setConstraint: (key, value) => set((state) => ({
     constraints: { ...state.constraints, [key]: value }
   })),
@@ -115,5 +136,6 @@ export const useAppStore = create<AppState>((set) => ({
   setGraphLoading: (graphLoading) => set({ graphLoading }),
   setConstraintsApplying: (constraintsApplying) => set({ constraintsApplying }),
 
-  reset: () => set({ ...initialState }),
+  reset: () => set(initialState),
+  resetWorkspace: () => set(workspaceState),
 }));

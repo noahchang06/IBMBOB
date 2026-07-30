@@ -2,11 +2,19 @@ import uuid
 from typing import Optional, List
 from app.models.graph import ReasoningGraph, GraphNode, GraphEdge, EdgeType
 from app.data.knowledge_base import knowledge_base
+from app.db.repository import Repository
 from app.models.common import DerivationLabel
 
 class GraphService:
-    def build_graph(self, challenge_id: str, selected_inspiration_ids: Optional[List[str]] = None) -> ReasoningGraph:
-        inspirations = knowledge_base.get_inspirations(challenge_id)
+    def __init__(self, repo: Repository):
+        self.repo = repo
+
+    async def build_graph(self, challenge_id: str, selected_inspiration_ids: Optional[List[str]] = None) -> ReasoningGraph:
+        if challenge_id.startswith("user-"):
+            inspirations = await self.repo.get_inspirations_for_challenge(challenge_id)
+        else:
+            inspirations = knowledge_base.get_inspirations(challenge_id)
+
         if selected_inspiration_ids is not None:
             inspirations = [i for i in inspirations if i.id in selected_inspiration_ids]
             
@@ -21,25 +29,32 @@ class GraphService:
                 derivation=DerivationLabel.SYSTEM
             ))
             
-        raw_edges = knowledge_base.get_raw_edges(challenge_id)
-        
-        edges = []
         # Create a set of valid node inspiration IDs to filter edges
         valid_insp_ids = {i.id for i in inspirations}
         
-        for e_data in raw_edges:
-            if e_data["source_id"] in valid_insp_ids and e_data["target_id"] in valid_insp_ids:
-                edges.append(GraphEdge(
-                    id=e_data["id"],
-                    source_id=f"n-{e_data['source_id']}",
-                    target_id=f"n-{e_data['target_id']}",
-                    edge_type=EdgeType(e_data["edge_type"]),
-                    weight=e_data["weight"],
-                    relationship_description=e_data["relationship_description"],
-                    transferable_insight=e_data["transferable_insight"],
-                    evidence=e_data["evidence"],
-                    derivation=DerivationLabel.CURATED
-                ))
+        edges = []
+        if challenge_id.startswith("user-"):
+            db_edges = await self.repo.get_edges_for_challenge(challenge_id)
+            for edge in db_edges:
+                if edge.source_id in valid_insp_ids and edge.target_id in valid_insp_ids:
+                    edge.source_id = f"n-{edge.source_id}"
+                    edge.target_id = f"n-{edge.target_id}"
+                    edges.append(edge)
+        else:
+            raw_edges = knowledge_base.get_raw_edges(challenge_id)
+            for e_data in raw_edges:
+                if e_data["source_id"] in valid_insp_ids and e_data["target_id"] in valid_insp_ids:
+                    edges.append(GraphEdge(
+                        id=e_data["id"],
+                        source_id=f"n-{e_data['source_id']}",
+                        target_id=f"n-{e_data['target_id']}",
+                        edge_type=EdgeType(e_data["edge_type"]),
+                        weight=e_data["weight"],
+                        relationship_description=e_data["relationship_description"],
+                        transferable_insight=e_data["transferable_insight"],
+                        evidence=e_data["evidence"],
+                        derivation=DerivationLabel.CURATED
+                    ))
                 
         # Recompute node importance based on connectivity (degree centrality simplified)
         graph = ReasoningGraph(

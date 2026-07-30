@@ -1,0 +1,27 @@
+{
+  "challenge": {
+    "id": "financial-portfolio",
+    "name": "Financial Portfolio",
+    "subtitle": "Visualizing wealth and risk",
+    "description": "Design a financial portfolio dashboard that transforms complex market data into actionable investment insights. The challenge bridges financial precision with human-centered information design.",
+    "domains": ["economics", "history", "psychology", "graphic_design"],
+    "tags": ["data visualization", "investment", "risk management", "real-time monitoring"]
+  },
+  "inspirations": [
+    {
+      "id": "fp-bull-bear",
+      "name": "Bull and Bear Market Cycles",
+      "domain": "economics",
+      "description": "The cyclical patterns of expansion and contraction in financial markets. These cycles influence investment strategies and risk perception.",
+      "historical_context": "The terms 'bull' and 'bear' have been used to describe market trends since the 18th century. The study of these cycles is a cornerstone of technical analysis.",
+      "key_principles": [
+        {"name": "Cyclical Fluctuation", "description": "Financial markets follow predictable, albeit irregular, patterns of growth and decline.", "source_domain": "economics"},
+        {"name": "Sentiment Amplification", "description": "Market sentiment tends to amplify trends, leading to bubbles and crashes.", "source_domain": "economics"}
+      ],
+      "transferable_lessons": ["Visualizations should account for market cycles, not just linear growth.", "Sentiment indicators can be as important as financial metrics."],
+      "related_concepts": ["Kondratiev waves", "Market sentiment", "Behavioral economics"],
+      "design_implications": ["Use cyclical visualizations for market data.", "Incorporate sentiment analysis into the dashboard."]
+    }
+  ],
+  "edges": []
+}

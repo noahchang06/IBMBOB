@@ -89,6 +89,18 @@ class WatsonXGraniteAdapter(GraniteAdapter):
             validate=False,          # skip online model-list check at startup
         )
 
+    async def generate_inspirations(self, challenge: "PresetChallenge") -> list["Inspiration"]:
+        """This method is not implemented in the production adapter."""
+        raise NotImplementedError("Inspiration generation is only available in mock mode.")
+
+    async def generate_edges(self, challenge_id: str, inspirations: list["Inspiration"]) -> list["GraphEdge"]:
+        """This method is not implemented in the production adapter."""
+        raise NotImplementedError("Edge generation is only available in mock mode.")
+
+    async def generate_edges_for_new_inspiration(self, challenge_id: str, new_inspiration: "Inspiration", existing_inspirations: list["Inspiration"]) -> list["GraphEdge"]:
+        """This method is not implemented in the production adapter."""
+        raise NotImplementedError("Edge generation for new inspirations is only available in mock mode.")
+
     async def _call(self, prompt: str) -> str:
         """Send a single prompt asynchronously; extract and return the text."""
         response = await self._model.agenerate(

@@ -7,10 +7,10 @@ export interface LabeledValue<T> {
 }
 
 // === Domains ===
-export type DomainType = 
-  | 'architecture' | 'biology' | 'music' | 'industrial_design' 
-  | 'psychology' | 'nature' | 'fashion' | 'engineering' 
-  | 'history' | 'film';
+export type DomainType =
+  | 'architecture' | 'biology' | 'music' | 'industrial_design'
+  | 'psychology' | 'nature' | 'fashion' | 'engineering'
+  | 'history' | 'film' | 'economics' | 'graphic_design';
 
 export const DOMAIN_COLORS: Record<DomainType, string> = {
   architecture: '#E8A87C',
@@ -23,6 +23,8 @@ export const DOMAIN_COLORS: Record<DomainType, string> = {
   engineering: '#5B8BA0',
   history: '#C9B1FF',
   film: '#F3C178',
+  economics: '#2ECC71',
+  graphic_design: '#9B59B6',
 };
 
 export const DOMAIN_LABELS: Record<DomainType, string> = {
@@ -36,6 +38,8 @@ export const DOMAIN_LABELS: Record<DomainType, string> = {
   engineering: 'Engineering',
   history: 'History',
   film: 'Film',
+  economics: 'Economics',
+  graphic_design: 'Graphic Design',
 };
 
 // === Inspirations ===

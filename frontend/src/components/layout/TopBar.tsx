@@ -3,10 +3,10 @@ import { useAppStore } from '../../store/appStore';
 import { DOMAIN_COLORS, DOMAIN_LABELS } from '../../types';
 
 export function TopBar() {
-  const { selectedChallenge, activePanel, setView, reset, constraintsApplying } = useAppStore();
+  const { selectedChallenge, activePanel, setView, resetWorkspace, constraintsApplying } = useAppStore();
 
   const handleBack = () => {
-    reset();
+    resetWorkspace();
     setView('discovery');
   };
 

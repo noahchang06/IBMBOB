@@ -1,7 +1,26 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List
+from app.models.challenge import PresetChallenge
+from app.models.inspiration import Inspiration
+
+from app.models.graph import GraphEdge
 
 class GraniteAdapter(ABC):
+    @abstractmethod
+    async def generate_inspirations(self, challenge: PresetChallenge) -> List[Inspiration]:
+        """Generate a list of inspirations for a given challenge."""
+        pass
+
+    @abstractmethod
+    async def generate_edges(self, challenge_id: str, inspirations: List[Inspiration]) -> List[GraphEdge]:
+        """Generate a list of edges for a given list of inspirations."""
+        pass
+
+    @abstractmethod
+    async def generate_edges_for_new_inspiration(self, challenge_id: str, new_inspiration: Inspiration, existing_inspirations: List[Inspiration]) -> List[GraphEdge]:
+        """Generate edges for a single new inspiration against a list of existing ones."""
+        pass
+
     @abstractmethod
     async def extract_principles(self, inspiration_description: str, target_domain: str) -> List[str]:
         """Extract transferable principles from an inspiration for a target domain."""

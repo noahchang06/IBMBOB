@@ -4,9 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
 from app.config import settings
 from app.data.knowledge_base import knowledge_base
-from app.db.sqlite_repository import SQLiteRepository
-
-repo = SQLiteRepository()
+from app.db.dependencies import repo
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

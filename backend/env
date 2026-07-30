@@ -1,0 +1,6 @@
+USE_MOCK_GRANITE=False
+
+GRANITE_API_KEY=tGZQ1lsi1EYIFgf_X0Z46N8iTqudu08YgBLsRi7fH9cn
+WATSONX_PROJECT_ID=4a356926-dccc-4275-9ad0-265dae1c9468
+GRANITE_API_URL=https://us-south.ml.cloud.ibm.com
+GRANITE_MODEL_ID=ibm/granite-4-h-small

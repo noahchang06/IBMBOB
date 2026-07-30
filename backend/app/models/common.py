@@ -9,6 +9,7 @@ class DerivationLabel(str, Enum):
     SYSTEM = "SYSTEM"
     RETRIEVED = "RETRIEVED"
     AI = "AI"
+    MANUAL = "MANUAL"
 
 class LabeledValue(BaseModel, Generic[T]):
     value: T
@@ -25,3 +26,5 @@ class DomainType(str, Enum):
     engineering = "engineering"
     history = "history"
     film = "film"
+    economics = "economics"
+    graphic_design = "graphic_design"

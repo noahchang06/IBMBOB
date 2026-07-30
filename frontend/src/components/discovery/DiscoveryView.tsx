@@ -4,15 +4,17 @@ import { useApi } from '../../hooks/useApi';
 import { GlassCard } from '../shared/GlassCard';
 import { DOMAIN_COLORS, DOMAIN_LABELS } from '../../types';
 import type { PresetChallenge } from '../../types';
+import { CreateChallengeForm } from './CreateChallengeForm';
 
 export function DiscoveryView() {
   const {
     challenges, selectChallenge, setView, setGraph, setInspirations,
-    setGraphLoading, setDesignSystem, graphLoading,
+    setGraphLoading, setDesignSystem, graphLoading, setChallenges,
   } = useAppStore();
   const api = useApi();
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isCreateModalOpen, setCreateModalOpen] = useState(false);
 
   const handleSelectChallenge = async (challenge: PresetChallenge) => {
     selectChallenge(challenge);
@@ -36,8 +38,34 @@ export function DiscoveryView() {
     }
   };
 
+  const handleCreateChallenge = async (challengeData: any) => {
+    try {
+      const newChallenge = await api.createChallenge(challengeData);
+      setChallenges([...challenges, newChallenge]);
+      setCreateModalOpen(false);
+      await handleSelectChallenge(newChallenge);
+    } catch (error) {
+      setError('Failed to create challenge. Please try again.');
+    }
+  };
+
+  const handleDeleteChallenge = async (challengeId: string) => {
+    try {
+      await api.deleteChallenge(challengeId);
+      setChallenges(challenges.filter(c => c.id !== challengeId));
+    } catch (error) {
+      setError('Failed to delete challenge. Please try again.');
+    }
+  };
+
   return (
     <div className="w-full h-full flex flex-col items-center justify-start p-8 overflow-y-auto bg-gradient-to-b from-surface-0 via-surface-1 to-surface-0">
+      {isCreateModalOpen && (
+        <CreateChallengeForm 
+          onClose={() => setCreateModalOpen(false)}
+          onCreate={handleCreateChallenge}
+        />
+      )}
       {/* Hero */}
       <div className="max-w-5xl w-full text-center mb-12 animate-fade-in flex flex-col items-center">
         <span className="px-3 py-1 rounded-full text-xs font-mono tracking-widest uppercase bg-accent/10 text-accent border border-accent/20 mb-6">
@@ -56,6 +84,14 @@ export function DiscoveryView() {
           Cross-domain inspiration graphs, deterministic constraint propagation, and
           explainable design system generation — powered by IBM Granite.
         </p>
+        <div className="mt-8">
+          <button 
+            className="px-6 py-3 rounded-lg bg-accent text-white font-semibold hover:bg-accent-bright transition-all"
+            onClick={() => setCreateModalOpen(true)}
+          >
+            Create New Challenge
+          </button>
+        </div>
       </div>
 
       {/* Error banner */}
@@ -92,10 +128,21 @@ export function DiscoveryView() {
                 className="p-6 cursor-pointer hover:border-accent/50 hover:shadow-xl transition-all duration-300 flex flex-col group relative overflow-hidden"
                 onClick={() => !graphLoading && handleSelectChallenge(challenge)}
               >
+                {challenge.id.startsWith('user-') && (
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteChallenge(challenge.id);
+                    }}
+                    className="absolute top-2 right-2 p-1 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500/40"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  </button>
+                )}
                 {/* Top badge */}
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-accent font-semibold px-2 py-0.5 rounded bg-accent/10 border border-accent/20">
-                    Curated Challenge
+                    {challenge.id.startsWith('user-') ? 'User-Created Challenge' : 'Curated Challenge'}
                   </span>
                   <span className="text-xs font-mono text-text-muted flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />

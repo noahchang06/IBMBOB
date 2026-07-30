@@ -1,5 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List
+from app.models.challenge import PresetChallenge
+
+from app.models.inspiration import Inspiration
+from app.models.graph import GraphEdge
 
 class Repository(ABC):
     @abstractmethod
@@ -16,4 +20,32 @@ class Repository(ABC):
         
     @abstractmethod
     async def list_snapshots(self, project_id: str) -> List[Dict[str, Any]]:
+        pass
+    
+    @abstractmethod
+    async def create_challenge(self, challenge: PresetChallenge) -> None:
+        pass
+
+    @abstractmethod
+    async def get_all_challenges(self) -> List[PresetChallenge]:
+        pass
+
+    @abstractmethod
+    async def create_inspiration(self, challenge_id: str, inspiration: Inspiration) -> None:
+        pass
+
+    @abstractmethod
+    async def get_inspirations_for_challenge(self, challenge_id: str) -> List[Inspiration]:
+        pass
+
+    @abstractmethod
+    async def create_edge(self, challenge_id: str, edge: GraphEdge) -> None:
+        pass
+
+    @abstractmethod
+    async def get_edges_for_challenge(self, challenge_id: str) -> List[GraphEdge]:
+        pass
+
+    @abstractmethod
+    async def delete_challenge(self, challenge_id: str) -> None:
         pass

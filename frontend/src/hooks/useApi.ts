@@ -106,6 +106,33 @@ export function useApi() {
     return res.json();
   };
 
+  const createChallenge = async (challengeData: any): Promise<PresetChallenge> => {
+    const res = await fetch(`${API_BASE}/challenges`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(challengeData),
+    });
+    if (!res.ok) throw new Error('Failed to create challenge');
+    return res.json();
+  };
+
+  const deleteChallenge = async (challengeId: string): Promise<void> => {
+    const res = await fetch(`${API_BASE}/challenges/${challengeId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error('Failed to delete challenge');
+  };
+
+  const addInspiration = async (challengeId: string, inspirationData: any): Promise<{ inspiration: Inspiration, new_edges: GraphEdge[] }> => {
+    const res = await fetch(`${API_BASE}/challenges/${challengeId}/inspirations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(inspirationData),
+    });
+    if (!res.ok) throw new Error('Failed to add inspiration');
+    return res.json();
+  };
+
   return {
     fetchChallenges,
     buildGraph,
@@ -114,5 +141,8 @@ export function useApi() {
     explainNode,
     explainDesignDecision,
     exportPackage,
+    createChallenge,
+    deleteChallenge,
+    addInspiration,
   };
-}
+  }
