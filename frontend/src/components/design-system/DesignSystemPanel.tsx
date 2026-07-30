@@ -43,37 +43,55 @@ export function DesignSystemPanel() {
 
   return (
     <div className="p-6 space-y-10 pb-20">
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h2 className="text-2xl font-bold mb-1">Design System</h2>
-          <div className="flex items-center gap-2 text-xs text-text-muted font-mono">
-            <span className={`px-1.5 py-0.5 rounded ${
+      {/* Header & Compliance Summary */}
+      <div className="space-y-4">
+        <div className="flex justify-between items-start">
+          <div>
+            <h2 className="text-2xl font-bold mb-1">Design System</h2>
+            <p className="text-xs text-text-muted">
+              Generated deterministically from reasoning graph constraints.
+            </p>
+          </div>
+          <DerivationBadge label={designSystem.derivation} />
+        </div>
+
+        {/* Accessibility & Compliance Banner */}
+        <div className="bg-surface-1 border border-border rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+          <div className="flex items-center gap-2">
+            <span className="text-text-muted">WCAG Status:</span>
+            <span className={`px-2 py-0.5 rounded font-semibold ${
               designSystem.wcag_level === 'AAA'
-                ? 'bg-green-400/15 text-green-400 border border-green-400/30'
+                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                 : designSystem.wcag_level === 'AA'
-                  ? 'bg-blue-400/15 text-blue-400 border border-blue-400/30'
-                  : 'bg-yellow-400/15 text-yellow-400 border border-yellow-400/30'
+                  ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                  : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
             }`}>
-              WCAG {designSystem.wcag_level}
+              Level {designSystem.wcag_level} Compliant
             </span>
-            <span>·</span>
-            <span>{designSystem.motion_duration_ms}ms easing</span>
+          </div>
+
+          <div className="flex items-center gap-2 text-text-secondary">
+            <span className="text-text-muted">Motion Curve:</span>
+            <span className="bg-surface-2 px-2 py-0.5 rounded border border-border">
+              {designSystem.motion_duration_ms}ms ease-out
+            </span>
           </div>
         </div>
-        <DerivationBadge label={designSystem.derivation} />
       </div>
 
       {/* Typography */}
       <section>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-4 border-b border-border pb-2">
-          Typography
-        </h3>
+        <div className="flex items-center justify-between mb-3 border-b border-border pb-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+            Typography Tokens
+          </h3>
+          <DerivationBadge label="SYSTEM" />
+        </div>
         <div className="bg-surface-1 p-4 rounded-xl border border-border space-y-4">
-          <div className="flex justify-between text-[10px] text-text-muted font-mono">
-            <span>Base {typography.base_size}px</span>
-            <span>Scale ×{typography.scale_ratio}</span>
-            <span>Leading {typography.line_height}</span>
+          <div className="flex justify-between text-[11px] text-text-muted font-mono bg-surface-2/60 p-2 rounded border border-border/50">
+            <span>Base Size: <strong className="text-text-primary">{typography.base_size}px</strong></span>
+            <span>Scale Ratio: <strong className="text-text-primary">×{typography.scale_ratio}</strong></span>
+            <span>Leading: <strong className="text-text-primary">{typography.line_height}</strong></span>
           </div>
 
           {([

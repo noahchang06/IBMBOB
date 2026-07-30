@@ -155,10 +155,10 @@ export function ReasoningGraph() {
               (edge.source_id === hoveredNode || edge.target_id === hoveredNode);
             const highlighted = isSelected || linkedToNode || linkedToHovered;
 
-            const opacity = highlighted ? 0.9 : 0.25 + edge.weight * 0.4;
+            const opacity = highlighted ? 0.98 : 0.35 + edge.weight * 0.45;
             const strokeWidth = isSelected
-              ? (1 + edge.weight * 3) + 2
-              : (1 + edge.weight * 3);
+              ? (1.5 + edge.weight * 3) + 2
+              : (1.5 + edge.weight * 3);
             const color = EDGE_TYPE_COLORS[edge.edge_type];
 
             return (
@@ -236,15 +236,16 @@ export function ReasoningGraph() {
                   className="pointer-events-none"
                 />
 
-                {/* Label below */}
+                {/* High contrast node label */}
                 <text
                   y={radius + 16}
                   textAnchor="middle"
-                  fill={isSelected || isHovered ? '#e8e9f0' : '#6a6f85'}
-                  fontSize={10}
+                  fill={isSelected || isHovered ? '#ffffff' : '#c3c8dc'}
+                  fontSize={11}
+                  fontWeight={isSelected || isHovered ? '600' : '500'}
                   fontFamily="JetBrains Mono, monospace"
                   className="pointer-events-none transition-colors duration-200"
-                  style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}
+                  style={{ textShadow: '0 1px 4px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.9)' }}
                 >
                   {node.label}
                 </text>
@@ -255,11 +256,11 @@ export function ReasoningGraph() {
                     y={-radius - 10}
                     textAnchor="middle"
                     fill={color}
-                    fontSize={8}
+                    fontSize={9}
                     fontFamily="JetBrains Mono, monospace"
                     fontWeight="bold"
-                    className="pointer-events-none uppercase"
-                    style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}
+                    className="pointer-events-none uppercase tracking-wider"
+                    style={{ textShadow: '0 1px 4px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.9)' }}
                   >
                     {DOMAIN_LABELS[node.domain]}
                   </text>

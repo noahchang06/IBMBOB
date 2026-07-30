@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { useApi } from '../../hooks/useApi';
+import { DerivationBadge } from '../shared/DerivationBadge';
 
 export function ExportPanel() {
   const { selectedChallenge, graph, designSystem, constraints, inspirations } = useAppStore();
@@ -81,13 +82,11 @@ export function ExportPanel() {
               <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
             </svg>
             <div>
-              <div className="font-medium">Design Tokens</div>
-              <div className="text-xs text-text-muted">JSON format • Ready for style-dictionary</div>
+              <div className="font-medium text-sm">Design Tokens</div>
+              <div className="text-xs text-text-muted">JSON format · Style-dictionary compatible</div>
             </div>
           </div>
-          {designSystem
-            ? <span className="text-green-400 text-xs font-mono">READY</span>
-            : <span className="text-text-muted text-xs font-mono">MISSING</span>}
+          <DerivationBadge label="SYSTEM" />
         </div>
 
         {/* Graph Data */}
@@ -102,15 +101,13 @@ export function ExportPanel() {
               <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
             </svg>
             <div>
-              <div className="font-medium">Graph Data</div>
+              <div className="font-medium text-sm">Reasoning Graph Data</div>
               <div className="text-xs text-text-muted">
                 {graph ? `${graph.nodes.length} nodes · ${graph.edges.length} edges` : 'Nodes & Edges'}
               </div>
             </div>
           </div>
-          {graph
-            ? <span className="text-green-400 text-xs font-mono">READY</span>
-            : <span className="text-text-muted text-xs font-mono">MISSING</span>}
+          <DerivationBadge label="RETRIEVED" />
         </div>
 
         {/* Reasoning Summary */}
@@ -124,11 +121,11 @@ export function ExportPanel() {
               <line x1="16" y1="17" x2="8" y2="17" />
             </svg>
             <div>
-              <div className="font-medium">Reasoning Summary</div>
+              <div className="font-medium text-sm">Reasoning Summary</div>
               <div className="text-xs text-text-muted">Markdown · IBM Granite rationale trace</div>
             </div>
           </div>
-          <span className="text-green-400 text-xs font-mono">AUTO-GEN</span>
+          <DerivationBadge label="AI" />
         </div>
 
         {/* Inspirations */}
@@ -141,13 +138,13 @@ export function ExportPanel() {
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
             <div>
-              <div className="font-medium">Inspiration Knowledge Base</div>
+              <div className="font-medium text-sm">Inspiration Knowledge Base</div>
               <div className="text-xs text-text-muted">
-                {graph ? `${graph.nodes.length} curated nodes with provenance` : 'All nodes'}
+                {graph ? `${graph.nodes.length} curated nodes with evidence` : 'Curated domain facts'}
               </div>
             </div>
           </div>
-          <span className="text-[#f0b88a] text-xs font-mono">CURATED</span>
+          <DerivationBadge label="CURATED" />
         </div>
       </div>
 

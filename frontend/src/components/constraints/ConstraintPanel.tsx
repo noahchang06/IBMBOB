@@ -132,36 +132,55 @@ export function ConstraintPanel() {
         })}
       </div>
 
-      {/* Effects summary */}
+      {/* Summary of effects */}
       {modifiedCount > 0 && !constraintsApplying && (
-        <div className="bg-surface-1 border border-border rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
-              Propagation Effects
+        <div className="bg-surface-1 border border-border rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted flex items-center gap-2">
+              <span>Propagation Effects</span>
+              <span className="px-1.5 py-0.5 rounded-full bg-accent/15 text-accent text-[10px] font-mono">
+                {modifiedCount} edge{modifiedCount !== 1 ? 's' : ''} modified
+              </span>
             </h3>
             <DerivationBadge label="SYSTEM" />
           </div>
-          <p className="text-xs text-text-secondary mb-3">
-            <span className="text-accent font-mono font-semibold">{modifiedCount}</span> edge
-            {modifiedCount !== 1 ? 's' : ''} modified by current constraints.
-          </p>
-          <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-            {constraintEffects.slice(0, 8).map(effect => (
-              <div key={effect.edge_id} className="flex items-center gap-2 text-[11px]">
-                <span className="font-mono text-text-muted w-20 truncate shrink-0">
-                  {effect.edge_id.replace('e-', '')}
-                </span>
-                <span className={`font-mono tabular-nums ${
-                  effect.modified_weight > effect.original_weight
-                    ? 'text-green-400' : 'text-red-400'
-                }`}>
-                  {effect.original_weight.toFixed(2)} → {effect.modified_weight.toFixed(2)}
-                </span>
-              </div>
-            ))}
+          
+          <div className="space-y-2 max-h-52 overflow-y-auto pr-1 divide-y divide-border/40">
+            {constraintEffects.slice(0, 8).map(effect => {
+              const delta = effect.modified_weight - effect.original_weight;
+              const isIncrease = delta > 0;
+              const deltaFormatted = (isIncrease ? '+' : '') + delta.toFixed(2);
+
+              return (
+                <div key={effect.edge_id} className="pt-2 first:pt-0 flex items-center justify-between text-xs font-mono">
+                  <div className="flex items-center gap-2">
+                    <span className="text-text-secondary font-medium">
+                      Edge #{effect.edge_id.replace('e-', '')}
+                    </span>
+                    <span className={`text-[9px] px-1.5 py-0.2 rounded font-semibold uppercase ${
+                      isIncrease ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                    }`}>
+                      {isIncrease ? 'Amplified' : 'Attenuated'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3 tabular-nums">
+                    <span className="text-text-muted">
+                      {effect.original_weight.toFixed(2)} → <strong className="text-text-primary">{effect.modified_weight.toFixed(2)}</strong>
+                    </span>
+                    <span className={`px-1.5 py-0.5 rounded text-[11px] font-bold flex items-center gap-0.5 ${
+                      isIncrease ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'
+                    }`}>
+                      <span>{isIncrease ? '▲' : '▼'}</span>
+                      <span>{deltaFormatted}</span>
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
             {modifiedCount > 8 && (
-              <p className="text-[10px] text-text-muted italic">
-                +{modifiedCount - 8} more…
+              <p className="pt-2 text-[10px] text-text-muted italic">
+                +{modifiedCount - 8} additional edges modified in graph…
               </p>
             )}
           </div>
