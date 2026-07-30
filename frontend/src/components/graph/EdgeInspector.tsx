@@ -33,11 +33,11 @@ export function EdgeInspector() {
   };
 
   return (
-    <div className="p-6 space-y-8 pb-20">
+    <div className="p-6 space-y-6 pb-20">
       <div>
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex items-start justify-between mb-4">
           <span 
-            className="px-2 py-1 rounded text-xs font-mono uppercase font-medium"
+            className="px-2.5 py-1 rounded text-xs font-mono uppercase font-semibold"
             style={{ backgroundColor: `${edgeColor}22`, color: edgeColor, border: `1px solid ${edgeColor}55` }}
           >
             {EDGE_TYPE_LABELS[selectedEdge.edge_type]}
@@ -45,22 +45,24 @@ export function EdgeInspector() {
           <DerivationBadge label={selectedEdge.derivation} />
         </div>
 
-        <div className="flex items-center gap-4 bg-surface-2 p-4 rounded-xl border border-border mb-6">
+        {/* Source -> Target Nodes */}
+        <div className="flex items-center gap-4 bg-surface-2 p-4 rounded-xl border border-border mb-4">
           <div className="flex-1 text-center">
-            <div className="text-xs text-text-muted mb-1">SOURCE</div>
-            <div className="font-medium" style={{ color: DOMAIN_COLORS[sourceNode.domain] }}>{sourceNode.label}</div>
+            <div className="text-[10px] font-mono text-text-muted uppercase mb-0.5">SOURCE NODE</div>
+            <div className="font-semibold text-sm" style={{ color: DOMAIN_COLORS[sourceNode.domain] }}>{sourceNode.label}</div>
           </div>
-          <div className="text-text-muted">→</div>
+          <div className="text-text-muted font-bold">→</div>
           <div className="flex-1 text-center">
-            <div className="text-xs text-text-muted mb-1">TARGET</div>
-            <div className="font-medium" style={{ color: DOMAIN_COLORS[targetNode.domain] }}>{targetNode.label}</div>
+            <div className="text-[10px] font-mono text-text-muted uppercase mb-0.5">TARGET NODE</div>
+            <div className="font-semibold text-sm" style={{ color: DOMAIN_COLORS[targetNode.domain] }}>{targetNode.label}</div>
           </div>
         </div>
 
+        {/* Connection Weight */}
         <div>
-          <div className="flex justify-between text-xs mb-1">
-            <span className="text-text-muted">Connection Weight</span>
-            <span className="font-mono">{(selectedEdge.weight * 100).toFixed(0)}%</span>
+          <div className="flex justify-between text-xs mb-1 font-mono">
+            <span className="text-text-muted">Connection Strength</span>
+            <span className="font-bold" style={{ color: edgeColor }}>{(selectedEdge.weight * 100).toFixed(0)}%</span>
           </div>
           <div className="w-full h-2 bg-surface-3 rounded-full overflow-hidden">
             <div 
@@ -71,21 +73,41 @@ export function EdgeInspector() {
         </div>
       </div>
 
+      {/* Prominent Transferable Insight Banner */}
+      <div 
+        className="p-4 rounded-xl border relative overflow-hidden"
+        style={{
+          backgroundColor: `${edgeColor}10`,
+          borderColor: `${edgeColor}44`,
+          borderLeftWidth: '4px',
+          borderLeftColor: edgeColor,
+        }}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] font-mono uppercase tracking-wider font-bold" style={{ color: edgeColor }}>
+            Cross-Domain Transferable Insight
+          </span>
+          <DerivationBadge label={selectedEdge.derivation} />
+        </div>
+        <p className="text-sm font-medium text-text-primary leading-relaxed italic">
+          "{selectedEdge.transferable_insight}"
+        </p>
+      </div>
+
+      {/* Relationship Description */}
       <div>
-        <h3 className="section-header">Relationship Description</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2 border-b border-border pb-1">
+          Relationship Description
+        </h3>
         <p className="text-sm text-text-secondary leading-relaxed">{selectedEdge.relationship_description}</p>
       </div>
 
+      {/* Evidence */}
       <div>
-        <h3 className="section-header">Transferable Insight</h3>
-        <div className="border-l-2 pl-4 py-1 my-3 italic text-text-primary text-sm" style={{ borderColor: edgeColor }}>
-          "{selectedEdge.transferable_insight}"
-        </div>
-      </div>
-
-      <div>
-        <h3 className="section-header">Evidence</h3>
-        <ul className="list-disc pl-5 space-y-1.5 text-sm text-text-secondary">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2 border-b border-border pb-1">
+          Evidence Base
+        </h3>
+        <ul className="list-disc pl-5 space-y-1.5 text-xs text-text-secondary leading-relaxed">
           {selectedEdge.evidence.map((ev, idx) => (
             <li key={idx}>{ev}</li>
           ))}

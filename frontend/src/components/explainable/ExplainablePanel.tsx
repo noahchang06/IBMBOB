@@ -44,6 +44,7 @@ const TIER_CONFIG = {
 type TierKey = keyof typeof TIER_CONFIG;
 
 // ── Provenance explanation tooltip ────────────────────────────────────────────
+// The visual legend explaining the labels
 function ProvenanceLegend() {
   return (
     <details className="group">
@@ -172,57 +173,65 @@ export function ExplainablePanel() {
       </div>
 
       {/* Three-tier provenance chain */}
-      <div className="space-y-8 relative before:absolute before:left-5 before:top-0 before:bottom-0 before:w-px before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
+      <div className="space-y-8 relative">
         {(Object.entries(chain) as [TierKey, typeof chain[TierKey]][]).map(([tierKey, steps]) => {
           if (!steps.length) return null;
           const cfg = TIER_CONFIG[tierKey];
           const isAI = 'isAI' in cfg && cfg.isAI;
 
           return (
-            <div key={tierKey} className="relative z-10">
+            <div
+              key={tierKey}
+              className="p-4 rounded-2xl border transition-all"
+              style={{
+                background: cfg.bg,
+                borderColor: cfg.border,
+              }}
+            >
               {/* Tier header */}
-              <div className="flex items-center gap-3 mb-4">
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                  style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color }}
-                >
-                  {cfg.num}
+              <div className="flex items-center justify-between pb-3 border-b border-border/50 mb-4">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                    style={{ background: 'var(--color-surface-2)', border: `1px solid ${cfg.border}`, color: cfg.color }}
+                  >
+                    {cfg.num}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm leading-tight flex items-center gap-2" style={{ color: cfg.color }}>
+                      <span>{cfg.label}</span>
+                    </h3>
+                    <p className="text-[11px] text-text-muted">{cfg.sublabel}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold leading-tight" style={{ color: cfg.color }}>
-                    {cfg.label}
-                  </h3>
-                  <p className="text-[10px] text-text-muted mt-0.5">{cfg.sublabel}</p>
-                </div>
+                <DerivationBadge label={cfg.derivation} />
               </div>
 
               {/* Steps */}
-              <div className="ml-14 space-y-3">
+              <div className="space-y-3">
                 {steps.map(step => (
                   <div
                     key={step.step_number}
-                    className="p-4 rounded-xl border"
+                    className="p-3.5 rounded-xl border bg-surface-1/90"
                     style={{
-                      background: isAI ? 'rgba(195,141,158,0.06)' : 'var(--color-surface-1)',
-                      borderColor: isAI ? 'rgba(195,141,158,0.25)' : 'var(--color-border)',
-                      borderLeftWidth: 2,
+                      borderColor: isAI ? 'rgba(195,141,158,0.35)' : 'var(--color-border)',
+                      borderLeftWidth: 3,
                       borderLeftColor: cfg.borderL,
                     }}
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-[10px] text-text-muted font-mono uppercase">
+                    <div className="flex justify-between items-start mb-1.5">
+                      <span className="text-[10px] text-text-muted font-mono uppercase font-semibold">
                         Step {step.step_number}
                       </span>
                       <DerivationBadge label={step.derivation} />
                     </div>
-                    <p className="text-sm text-text-secondary leading-relaxed">
+                    <p className="text-xs text-text-secondary leading-relaxed">
                       {step.description}
                     </p>
                     {/* Extra disclaimer on AI steps */}
                     {isAI && (
-                      <p className="mt-2 text-[10px] text-text-muted italic border-t border-border/50 pt-2">
-                        IBM Granite interpretation — qualitative only, not a
-                        deterministic output.
+                      <p className="mt-2 text-[10px] text-text-muted italic border-t border-border/40 pt-1.5">
+                        IBM Granite interpretation — qualitative synthesis, does not alter graph calculation.
                       </p>
                     )}
                   </div>
