@@ -47,5 +47,17 @@ class Repository(ABC):
         pass
 
     @abstractmethod
+    async def get_edge(self, challenge_id: str, edge_id: str):
+        pass
+
+    @abstractmethod
+    async def update_edge(self, challenge_id: str, edge: GraphEdge):
+        pass
+
+    @abstractmethod
+    async def delete_edge(self, challenge_id: str, edge_id: str) -> bool:
+        pass
+
+    @abstractmethod
     async def delete_challenge(self, challenge_id: str) -> None:
         pass

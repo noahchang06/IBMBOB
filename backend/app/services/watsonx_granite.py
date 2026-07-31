@@ -31,6 +31,14 @@ from ibm_watsonx_ai.metanames import GenTextParamsMetaNames as GenParams
 
 from app.services.granite_adapter import GraniteAdapter
 from app.config import settings
+from app.services.graph_context import (
+    build_alternatives_prompt,
+    build_node_tradeoff_prompt,
+    build_reasoning_summary_prompt,
+    build_relationship_prompt,
+    build_semantic_graph_context,
+    build_weak_analogy_prompt,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -88,18 +96,23 @@ class WatsonXGraniteAdapter(GraniteAdapter):
             params=_GEN_PARAMS,
             validate=False,          # skip online model-list check at startup
         )
+        # Graph structure stays deterministic; Granite only handles interpretive prose.
+        from app.services.mock_granite import MockGraniteAdapter
+        self._structural = MockGraniteAdapter()
 
     async def generate_inspirations(self, challenge: "PresetChallenge") -> list["Inspiration"]:
-        """This method is not implemented in the production adapter."""
-        raise NotImplementedError("Inspiration generation is only available in mock mode.")
+        """Delegate graph seeding to the deterministic structural adapter."""
+        return await self._structural.generate_inspirations(challenge)
 
     async def generate_edges(self, challenge_id: str, inspirations: list["Inspiration"]) -> list["GraphEdge"]:
-        """This method is not implemented in the production adapter."""
-        raise NotImplementedError("Edge generation is only available in mock mode.")
+        """Delegate edge construction to the deterministic structural adapter."""
+        return await self._structural.generate_edges(challenge_id, inspirations)
 
     async def generate_edges_for_new_inspiration(self, challenge_id: str, new_inspiration: "Inspiration", existing_inspirations: list["Inspiration"]) -> list["GraphEdge"]:
-        """This method is not implemented in the production adapter."""
-        raise NotImplementedError("Edge generation for new inspirations is only available in mock mode.")
+        """Delegate incremental edge construction to the deterministic structural adapter."""
+        return await self._structural.generate_edges_for_new_inspiration(
+            challenge_id, new_inspiration, existing_inspirations
+        )
 
     async def _call(self, prompt: str) -> str:
         """Send a single prompt asynchronously; extract and return the text."""
@@ -134,28 +147,14 @@ class WatsonXGraniteAdapter(GraniteAdapter):
         source: dict[str, Any],
         target: dict[str, Any],
         edge: dict[str, Any],
+        graph_context: dict[str, Any] | None = None,
     ) -> str:
         """
         Explain WHY two inspirations are connected and what makes the analogy
         creatively valuable.  Does NOT alter the edge weight (that is [SYSTEM]).
+        Uses semantic edge neighborhood context when provided.
         """
-        source_name = source.get("label") or source.get("name", "the source concept")
-        target_name = target.get("label") or target.get("name", "the target concept")
-        edge_type = edge.get("edge_type", "connection").replace("_", " ")
-        relationship = edge.get("relationship_description", "")
-        insight = edge.get("transferable_insight", "")
-
-        prompt = (
-            f"Two concepts are connected in a cross-domain reasoning graph.\n\n"
-            f"Source: {source_name}\n"
-            f"Target: {target_name}\n"
-            f"Connection type: {edge_type}\n"
-            f"Curated relationship: {relationship}\n"
-            f"Transferable insight: {insight}\n\n"
-            f"Explain in your own words why this analogy is creatively productive "
-            f"for interface design. What deeper structural or behavioural pattern "
-            f"makes this connection valuable beyond the surface similarity?"
-        )
+        prompt = build_relationship_prompt(source, target, edge, graph_context)
         return await self._call(prompt)
 
     async def suggest_alternatives(
@@ -167,16 +166,7 @@ class WatsonXGraniteAdapter(GraniteAdapter):
         Propose unexplored creative directions given the current graph and constraints.
         Returns lightweight suggestion dicts — no numerical values.
         """
-        node_labels = [n.get("label", n.get("id", "?")) for n in graph.get("nodes", [])][:6]
-        active = ", ".join(f"{k}={v:.1f}" for k, v in constraints.items() if isinstance(v, float))
-
-        prompt = (
-            f"A reasoning graph contains these inspiration nodes: {', '.join(node_labels)}.\n"
-            f"Active constraints: {active}.\n\n"
-            f"Suggest one or two unexplored creative directions — concepts from other "
-            f"domains that are not yet in the graph but would enrich the design system. "
-            f"Explain briefly why each would be valuable."
-        )
+        prompt = build_alternatives_prompt(graph, constraints)
         text = await self._call(prompt)
         return [{"id": "ai-suggestion-1", "concept": text, "derivation": "AI"}]
 
@@ -190,16 +180,7 @@ class WatsonXGraniteAdapter(GraniteAdapter):
         """
         if not edges:
             return []
-        summaries = "; ".join(
-            f"'{e.get('id', '?')}' ({e.get('edge_type', '?')})"
-            for e in edges[:8]
-        )
-        prompt = (
-            f"Review these cross-domain connections: {summaries}.\n\n"
-            f"Which of these analogies risk being superficial — where the surface "
-            f"similarity might mislead a designer rather than genuinely inform the "
-            f"interface? Explain your reasoning briefly."
-        )
+        prompt = build_weak_analogy_prompt(edges)
         text = await self._call(prompt)
         return [{"critique": text, "derivation": "AI"}]
 
@@ -207,40 +188,30 @@ class WatsonXGraniteAdapter(GraniteAdapter):
         self,
         decision: dict[str, Any],
         constraints: dict[str, Any],
+        graph_context: dict[str, Any] | None = None,
     ) -> str:
         """
         Explain the qualitative implications of the current constraint configuration
         for a specific design node or token decision.  No values are generated.
         """
-        inspiration = decision.get("inspiration", {})
-        node_name = (
-            inspiration.get("name")
-            or decision.get("target_id")
-            or "this design element"
-        )
-        domain = inspiration.get("domain", "")
-        description = inspiration.get("description", "")
-        principles_raw = inspiration.get("key_principles", [])
-        principles = "; ".join(
-            p.get("name", "") for p in principles_raw[:3] if p.get("name")
-        )
-
-        active_c = {k: v for k, v in constraints.items() if isinstance(v, (int, float))}
-        constraint_prose = ", ".join(
-            f"{k.replace('_', ' ')} at {v:.0%}" for k, v in active_c.items()
-        ) if active_c else "default balanced constraints"
-
-        prompt = (
-            f"Inspiration: {node_name}"
-            + (f" ({domain} domain)" if domain else "")
-            + ".\n"
-            + (f"Context: {description}\n" if description else "")
-            + (f"Key principles: {principles}\n" if principles else "")
-            + f"\nCurrent design constraints: {constraint_prose}.\n\n"
-            f"Explain what this inspiration teaches us about interface design "
-            f"and how the current constraints shape which aspects of it are most "
-            f"relevant. Focus on qualitative reasoning about implications and tradeoffs."
-        )
+        # Build neighborhood if full graph is in the decision payload
+        if graph_context is None and decision.get("graph"):
+            focus = []
+            node = decision.get("node") or {}
+            insp = decision.get("inspiration") or {}
+            if node.get("id"):
+                focus.append(node["id"])
+            elif decision.get("target_id"):
+                focus.append(decision["target_id"])
+            if insp.get("id") and f"n-{insp['id']}" not in focus:
+                # Prefer node id forms already in graph
+                focus.append(insp["id"])
+            graph_context = build_semantic_graph_context(
+                decision["graph"],
+                focus,
+                inspirations={insp["id"]: insp} if insp.get("id") else None,
+            )
+        prompt = build_node_tradeoff_prompt(decision, constraints, graph_context)
         return await self._call(prompt)
 
     async def generate_reasoning_summary(
@@ -254,43 +225,36 @@ class WatsonXGraniteAdapter(GraniteAdapter):
         Describes the creative logic of the session — does not reproduce or
         invent any numerical token values.
         """
-        node_labels = [
-            n.get("label", n.get("id", "?")) for n in graph.get("nodes", [])
-        ][:8]
-        top_nodes = ", ".join(node_labels)
-
-        edge_types: dict[str, int] = {}
-        for e in graph.get("edges", []):
-            et = e.get("edge_type", "unknown")
-            edge_types[et] = edge_types.get(et, 0) + 1
-        edge_summary = ", ".join(
-            f"{count} {et.replace('_', ' ')}"
-            for et, count in sorted(edge_types.items(), key=lambda x: -x[1])
-        )
-
-        active_c = {k: v for k, v in constraints.items() if isinstance(v, (int, float))}
-        constraint_prose = ", ".join(
-            f"{k.replace('_', ' ')} {v:.0%}" for k, v in active_c.items()
-        ) if active_c else "balanced defaults"
-
-        wcag = design_system.get("wcag_level", "AA")
-        base_size = design_system.get("typography", {}).get("base_size", 16)
-
-        prompt = (
-            f"A creative reasoning session produced the following design system.\n\n"
-            f"Inspiration nodes: {top_nodes}.\n"
-            f"Graph connections: {edge_summary}.\n"
-            f"Constraint configuration: {constraint_prose}.\n"
-            f"Resulting WCAG level: {wcag}. Base typography size: {base_size}px.\n\n"
-            f"Write a concise Markdown reasoning summary (use ## headings, no bullet "
-            f"lists) that explains the creative logic behind this design system. "
-            f"Cover: why these inspirations were combined, what the constraints "
-            f"prioritised, and what design philosophy emerged. "
-            f"Do not reproduce numerical token values — explain the reasoning."
-        )
+        prompt = build_reasoning_summary_prompt(graph, constraints, design_system)
         text = await self._call(prompt)
 
         # Ensure Markdown heading structure
         if not text.startswith("#"):
             text = f"## Design Reasoning Summary\n\n{text}"
         return text
+
+    async def suggest_relationships(
+        self,
+        source_idea: dict[str, Any],
+        target_idea: dict[str, Any],
+        graph_context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """
+        Ask Granite for up to three directed semantic relationship suggestions.
+        Returns validated suggestion dict — never persists edges.
+        """
+        from app.services.relationship_suggestions import (
+            build_suggest_relationships_prompt,
+            parse_relationship_suggestions,
+        )
+
+        prompt = build_suggest_relationships_prompt(source_idea, target_idea, graph_context)
+        logger.info(
+            "Granite relationship suggestion requested source=%s target=%s neighborhood_nodes=%s",
+            source_idea.get("id") or source_idea.get("title"),
+            target_idea.get("id") or target_idea.get("title"),
+            len((graph_context or {}).get("nodes") or []),
+        )
+        text = await self._call(prompt)
+        parsed = parse_relationship_suggestions(text)
+        return parsed.model_dump()

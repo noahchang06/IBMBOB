@@ -2,9 +2,16 @@ import { create } from 'zustand';
 import type { 
   AppView, WorkspacePanel, PresetChallenge, ReasoningGraph, 
   GraphNode, GraphEdge, Inspiration, ConstraintSet, ConstraintEffect,
-  DesignSystem, ExplanationResponse 
+  DesignSystem, ExplanationResponse, ReasoningPath
 } from '../types';
 import { DEFAULT_CONSTRAINTS } from '../types';
+
+export type HighlightedPathState = {
+  nodeIds: string[];
+  edgeIds: string[];
+  edgeKeys: string[]; // `${source}->${target}` fallback when edge id absent
+  pathIndex: number;
+} | null;
 
 interface AppState {
   // View state
@@ -24,16 +31,31 @@ interface AppState {
   selectedNode: GraphNode | null;
   selectedEdge: GraphEdge | null;
   hoveredNode: string | null;
+  highlightedPath: HighlightedPathState;
   setGraph: (g: ReasoningGraph | null) => void;
   selectNode: (n: GraphNode | null) => void;
   selectEdge: (e: GraphEdge | null) => void;
   setHoveredNode: (id: string | null) => void;
+  setHighlightedPath: (path: HighlightedPathState) => void;
+  clearHighlightedPath: () => void;
+  highlightReasoningPath: (path: ReasoningPath, pathIndex?: number) => void;
 
   // Inspirations (loaded with challenge)
   inspirations: Record<string, Inspiration>;
   setInspirations: (list: Inspiration[]) => void;
   addInspiration: (inspiration: Inspiration) => void;
   addNodeAndEdges: (node: GraphNode, edges: GraphEdge[]) => void;
+  addEdge: (edge: GraphEdge) => void;
+  updateEdgeInStore: (edge: GraphEdge) => void;
+  removeEdgeFromStore: (edgeId: string) => void;
+
+  // Manual edge-link mode
+  edgeLinkMode: boolean;
+  edgeLinkSourceId: string | null;
+  edgeLinkError: string | null;
+  setEdgeLinkMode: (enabled: boolean) => void;
+  setEdgeLinkSourceId: (id: string | null) => void;
+  setEdgeLinkError: (msg: string | null) => void;
 
   // Constraints
   constraints: ConstraintSet;
@@ -69,11 +91,15 @@ const workspaceState = {
   selectedNode: null,
   selectedEdge: null,
   hoveredNode: null,
+  highlightedPath: null as HighlightedPathState,
   inspirations: {},
   constraints: { ...DEFAULT_CONSTRAINTS },
   constraintEffects: [],
   designSystem: null,
   currentExplanation: null,
+  edgeLinkMode: false,
+  edgeLinkSourceId: null,
+  edgeLinkError: null,
 };
 
 const initialState = {
@@ -99,6 +125,24 @@ export const useAppStore = create<AppState>((set) => ({
   selectNode: (selectedNode) => set({ selectedNode, selectedEdge: null }),
   selectEdge: (selectedEdge) => set({ selectedEdge, selectedNode: null }),
   setHoveredNode: (hoveredNode) => set({ hoveredNode }),
+  setHighlightedPath: (highlightedPath) => set({ highlightedPath }),
+  clearHighlightedPath: () => set({ highlightedPath: null }),
+  highlightReasoningPath: (path, pathIndex = 0) => {
+    const nodeIds = (path.nodes || []).map(n => n.id).filter(Boolean);
+    const edgeIds = (path.edges || [])
+      .map(e => e.id)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+    const edgeKeys = (path.edges || [])
+      .map(e => `${e.source}->${e.target}`)
+      .filter(k => !k.startsWith('->') && !k.endsWith('->'));
+    if (!nodeIds.length || (!edgeIds.length && !edgeKeys.length)) {
+      set({ highlightedPath: null });
+      return;
+    }
+    set({
+      highlightedPath: { nodeIds, edgeIds, edgeKeys, pathIndex },
+    });
+  },
 
   setInspirations: (list) => {
     const map: Record<string, Inspiration> = {};
@@ -122,6 +166,40 @@ export const useAppStore = create<AppState>((set) => ({
       : null
   })),
 
+  addEdge: (edge) => set((state) => ({
+    graph: state.graph
+      ? { ...state.graph, edges: [...state.graph.edges, edge] }
+      : null,
+  })),
+
+  updateEdgeInStore: (edge) => set((state) => ({
+    graph: state.graph
+      ? {
+          ...state.graph,
+          edges: state.graph.edges.map(e => (e.id === edge.id ? edge : e)),
+        }
+      : null,
+    selectedEdge: state.selectedEdge?.id === edge.id ? edge : state.selectedEdge,
+  })),
+
+  removeEdgeFromStore: (edgeId) => set((state) => ({
+    graph: state.graph
+      ? {
+          ...state.graph,
+          edges: state.graph.edges.filter(e => e.id !== edgeId),
+        }
+      : null,
+    selectedEdge: state.selectedEdge?.id === edgeId ? null : state.selectedEdge,
+  })),
+
+  setEdgeLinkMode: (edgeLinkMode) => set({
+    edgeLinkMode,
+    edgeLinkSourceId: null,
+    edgeLinkError: null,
+  }),
+  setEdgeLinkSourceId: (edgeLinkSourceId) => set({ edgeLinkSourceId }),
+  setEdgeLinkError: (edgeLinkError) => set({ edgeLinkError }),
+
   setConstraint: (key, value) => set((state) => ({
     constraints: { ...state.constraints, [key]: value }
   })),
@@ -130,7 +208,10 @@ export const useAppStore = create<AppState>((set) => ({
 
   setDesignSystem: (designSystem) => set({ designSystem }),
 
-  setExplanation: (currentExplanation) => set({ currentExplanation }),
+  setExplanation: (currentExplanation) => set({
+    currentExplanation,
+    highlightedPath: null,
+  }),
   setExplanationLoading: (explanationLoading) => set({ explanationLoading }),
 
   setGraphLoading: (graphLoading) => set({ graphLoading }),

@@ -1,12 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppStore } from '../../store/appStore';
 import { DerivationBadge } from '../shared/DerivationBadge';
+import type { ReasoningPath, ReasoningPathEdge } from '../../types';
 
 // ── Provenance tier configuration ─────────────────────────────────────────────
-// The ordering here defines the visual order in the reasoning trace:
-//   1. [RETRIEVED]  — facts pulled from the curated knowledge base
-//   2. [SYSTEM]     — deterministic outputs from the constraint / centrality engine
-//   3. [AI]         — IBM Granite qualitative interpretation (clearly labelled)
 const TIER_CONFIG = {
   retrieved_knowledge: {
     num: 1,
@@ -43,8 +40,20 @@ const TIER_CONFIG = {
 
 type TierKey = keyof typeof TIER_CONFIG;
 
-// ── Provenance explanation tooltip ────────────────────────────────────────────
-// The visual legend explaining the labels
+const HUMAN_PROVENANCE: Record<string, string> = {
+  MANUAL: 'User-authored',
+  SYSTEM: 'System-generated',
+  CURATED: 'Context-derived',
+  AI: 'AI suggestion',
+  AI_ACCEPTED: 'AI suggestion accepted',
+  RETRIEVED: 'Context-derived',
+};
+
+function humanProvenance(derivation?: string | null): string {
+  if (!derivation) return 'Unknown provenance';
+  return HUMAN_PROVENANCE[derivation.toUpperCase()] || derivation;
+}
+
 function ProvenanceLegend() {
   return (
     <details className="group">
@@ -56,7 +65,9 @@ function ProvenanceLegend() {
           ['CURATED', '#8ba4ff', 'Peer-reviewed facts from the knowledge base'],
           ['RETRIEVED', '#f0b88a', 'Matched graph edges and evidence snippets'],
           ['SYSTEM', '#5fd4c0', 'Deterministic engine math — reproducible'],
-          ['AI', '#d9a4b5', 'IBM Granite interpretation — qualitative only'],
+          ['MANUAL', '#c3c8dc', 'User-authored relationship evidence'],
+          ['AI', '#d9a4b5', 'IBM Granite suggestion — qualitative only'],
+          ['AI_ACCEPTED', '#e8c4d0', 'User-confirmed AI relationship suggestion'],
         ] as const).map(([label, color, desc]) => (
           <div key={label} className="flex items-start gap-2">
             <span
@@ -73,16 +84,144 @@ function ProvenanceLegend() {
   );
 }
 
+function ReasoningPathCard({
+  path,
+  index,
+  isHighlighted,
+  onHighlight,
+  onClearHighlight,
+  onSelectNode,
+  onSelectEdge,
+}: {
+  path: ReasoningPath;
+  index: number;
+  isHighlighted: boolean;
+  onHighlight: () => void;
+  onClearHighlight: () => void;
+  onSelectNode: (nodeId: string) => void;
+  onSelectEdge: (edge: ReasoningPathEdge) => void;
+}) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const nodes = path.nodes || [];
+  const edges = path.edges || [];
+
+  if (!nodes.length || !edges.length) return null;
+
+  return (
+    <div
+      className="rounded-xl border p-3 space-y-3"
+      style={{
+        borderColor: isHighlighted ? 'rgba(65,179,163,0.55)' : 'var(--color-border)',
+        background: isHighlighted ? 'rgba(65,179,163,0.08)' : 'var(--color-surface-2)',
+      }}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[10px] font-mono uppercase tracking-wider text-accent">
+          Reasoning path {index + 1}
+          {edges.length > 1 ? ` · ${edges.length} hops` : ' · direct'}
+        </span>
+        {isHighlighted ? (
+          <button
+            type="button"
+            onClick={onClearHighlight}
+            className="text-[10px] px-2 py-1 rounded border border-border text-text-muted hover:text-text-primary"
+          >
+            Clear highlight
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onHighlight}
+            className="text-[10px] px-2 py-1 rounded border border-accent/40 text-accent hover:bg-accent/10"
+          >
+            Highlight path in graph
+          </button>
+        )}
+      </div>
+
+      {/* Compact directed path: Idea A — Builds on → Idea B */}
+      <div className="flex flex-col gap-1" role="list" aria-label={`Reasoning path ${index + 1}`}>
+        {nodes.map((node, i) => {
+          const edge: ReasoningPathEdge | undefined = edges[i];
+          return (
+            <div key={`${node.id}-${i}`} role="listitem">
+              <button
+                type="button"
+                onClick={() => onSelectNode(node.id)}
+                className="text-left text-sm font-medium text-text-primary hover:text-accent underline-offset-2 hover:underline"
+              >
+                {node.title}
+              </button>
+              {edge && (
+                <div className="flex items-center gap-2 pl-3 py-1 text-xs text-text-muted">
+                  <span aria-hidden="true">—</span>
+                  <button
+                    type="button"
+                    onClick={() => onSelectEdge(edge)}
+                    className="font-medium text-accent hover:underline"
+                    title="Open edge inspector"
+                  >
+                    {edge.relationship_label}
+                  </button>
+                  <span aria-hidden="true">→</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <details
+        open={detailsOpen}
+        onToggle={e => setDetailsOpen((e.target as HTMLDetailsElement).open)}
+      >
+        <summary className="cursor-pointer text-[10px] font-mono uppercase tracking-wider text-text-muted">
+          Relationship details ▸
+        </summary>
+        <div className="mt-2 space-y-2">
+          {edges.map((edge, ei) => (
+            <div key={edge.id || `${edge.source}-${edge.target}-${ei}`} className="text-xs bg-surface-1 border border-border rounded-lg p-2">
+              <div className="font-medium text-text-primary mb-1">
+                {edge.relationship_label}
+              </div>
+              <p className="text-text-secondary mb-1">
+                {edge.relationship_description?.trim() || 'No relationship description recorded.'}
+              </p>
+              <div className="flex flex-wrap gap-2 text-[10px] text-text-muted font-mono">
+                <span>{humanProvenance(edge.derivation)}</span>
+                {typeof edge.confidence === 'number' && (
+                  <span>confidence {(edge.confidence * 100).toFixed(0)}%</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </details>
+    </div>
+  );
+}
+
 export function ExplainablePanel() {
-  const { currentExplanation, explanationLoading, selectedNode, selectedEdge } = useAppStore();
+  const {
+    currentExplanation,
+    explanationLoading,
+    selectedNode,
+    selectedEdge,
+    graph,
+    highlightedPath,
+    selectNode,
+    selectEdge,
+    setActivePanel,
+    highlightReasoningPath,
+    clearHighlightedPath,
+  } = useAppStore();
 
   const targetLabel = selectedEdge
-    ? `Edge: ${selectedEdge.edge_type.replace(/_/g, ' ')}`
+    ? `Edge: ${selectedEdge.relationship_label || selectedEdge.edge_type.replace(/_/g, ' ')}`
     : selectedNode
       ? `Node: ${selectedNode.label}`
       : null;
 
-  // ── Loading ────────────────────────────────────────────────────────────────
   if (explanationLoading) {
     return (
       <div className="p-6 space-y-6" aria-busy="true" aria-label="Loading explanation from IBM Granite">
@@ -105,7 +244,6 @@ export function ExplainablePanel() {
     );
   }
 
-  // ── Empty state ────────────────────────────────────────────────────────────
   if (!currentExplanation) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-text-muted p-8 text-center h-full gap-6">
@@ -129,11 +267,35 @@ export function ExplainablePanel() {
   }
 
   const { chain, summary } = currentExplanation;
+  const paths = (currentExplanation.paths || []).filter(
+    p => (p.nodes?.length ?? 0) > 0 && (p.edges?.length ?? 0) > 0,
+  );
 
-  // ── Full trace ────────────────────────────────────────────────────────────
+  const focusPathNode = (nodeId: string) => {
+    const node = graph?.nodes.find(n => n.id === nodeId);
+    if (node) {
+      selectNode(node);
+    }
+  };
+
+  const focusPathEdge = (pathEdge: ReasoningPathEdge) => {
+    if (!graph) return;
+    let edge = pathEdge.id
+      ? graph.edges.find(e => e.id === pathEdge.id)
+      : undefined;
+    if (!edge) {
+      edge = graph.edges.find(
+        e => e.source_id === pathEdge.source && e.target_id === pathEdge.target,
+      );
+    }
+    if (edge) {
+      selectEdge(edge);
+      setActivePanel('inspector');
+    }
+  };
+
   return (
     <div className="p-6 space-y-8 pb-20">
-      {/* Target context */}
       {targetLabel && (
         <div className="text-xs font-mono text-text-muted bg-surface-1 px-3 py-2 rounded border border-border flex items-center justify-between">
           <span>Explaining → <span className="text-text-secondary">{targetLabel}</span></span>
@@ -141,7 +303,6 @@ export function ExplainablePanel() {
         </div>
       )}
 
-      {/* AI Summary — explicitly labelled as AI-generated */}
       <div>
         <h2 className="text-2xl font-bold mb-3">Reasoning Trace</h2>
         <div
@@ -159,7 +320,7 @@ export function ExplainablePanel() {
             </div>
             <DerivationBadge label="AI" />
           </div>
-          <p className="text-sm text-text-secondary leading-relaxed">{summary}</p>
+          <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-wrap">{summary}</p>
           <p className="mt-2 text-[10px] text-text-muted italic">
             This paragraph is IBM Granite's qualitative interpretation. It does not
             affect any deterministic output.
@@ -167,12 +328,47 @@ export function ExplainablePanel() {
         </div>
       </div>
 
-      {/* Provenance legend (collapsed by default) */}
+      {/* Visual reasoning paths from backend — never fabricated client-side */}
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-3 border-b border-border pb-1">
+          Supporting relationship paths
+        </h3>
+        {paths.length > 0 ? (
+          <div className="space-y-3">
+            {paths.map((path, index) => (
+              <ReasoningPathCard
+                key={`path-${index}-${path.nodes.map(n => n.id).join('-')}`}
+                path={path}
+                index={index}
+                isHighlighted={highlightedPath?.pathIndex === index}
+                onHighlight={() => highlightReasoningPath(path, index)}
+                onClearHighlight={clearHighlightedPath}
+                onSelectNode={focusPathNode}
+                onSelectEdge={focusPathEdge}
+              />
+            ))}
+            {highlightedPath && (
+              <button
+                type="button"
+                onClick={clearHighlightedPath}
+                className="w-full text-xs py-2 rounded-lg border border-border text-text-muted hover:text-text-primary"
+              >
+                Clear highlight
+              </button>
+            )}
+          </div>
+        ) : (
+          <p className="text-xs text-text-muted leading-relaxed">
+            No meaningful relationship path is recorded for this conclusion.
+            A path visualization is not shown because inventing one would be misleading.
+          </p>
+        )}
+      </div>
+
       <div className="border-t border-border pt-4">
         <ProvenanceLegend />
       </div>
 
-      {/* Three-tier provenance chain */}
       <div className="space-y-8 relative">
         {(Object.entries(chain) as [TierKey, typeof chain[TierKey]][]).map(([tierKey, steps]) => {
           if (!steps.length) return null;
@@ -188,7 +384,6 @@ export function ExplainablePanel() {
                 borderColor: cfg.border,
               }}
             >
-              {/* Tier header */}
               <div className="flex items-center justify-between pb-3 border-b border-border/50 mb-4">
                 <div className="flex items-center gap-3">
                   <div
@@ -207,7 +402,6 @@ export function ExplainablePanel() {
                 <DerivationBadge label={cfg.derivation} />
               </div>
 
-              {/* Steps */}
               <div className="space-y-3">
                 {steps.map(step => (
                   <div
@@ -225,10 +419,9 @@ export function ExplainablePanel() {
                       </span>
                       <DerivationBadge label={step.derivation} />
                     </div>
-                    <p className="text-xs text-text-secondary leading-relaxed">
+                    <p className="text-xs text-text-secondary leading-relaxed whitespace-pre-wrap">
                       {step.description}
                     </p>
-                    {/* Extra disclaimer on AI steps */}
                     {isAI && (
                       <p className="mt-2 text-[10px] text-text-muted italic border-t border-border/40 pt-1.5">
                         IBM Granite interpretation — qualitative synthesis, does not alter graph calculation.
@@ -242,7 +435,6 @@ export function ExplainablePanel() {
         })}
       </div>
 
-      {/* IBM Granite attribution footer */}
       <div className="border-t border-border pt-4 text-center space-y-2">
         <p className="text-[10px] text-text-muted leading-relaxed">
           <span

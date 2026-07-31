@@ -72,15 +72,53 @@ class ConstraintEngine:
                     modified_weight *= (1 - (mat - 0.5))
                     reasons.append("Reduced superficial visual similarities under scarcity.")
 
+            # 6. Semantic relationship types — preserve meaning beyond similarity
+            label = (getattr(edge, "relationship_label", None) or "").strip()
+            if edge.edge_type == EdgeType.contrast or edge.edge_type == EdgeType.opposition:
+                vt = constraints.get(ConstraintKey.visual_tension, 0.5)
+                if vt > 0.55:
+                    modified_weight *= (1 + (vt - 0.5) * 0.4)
+                    reasons.append(
+                        f"Amplified contrastive relationship "
+                        f"('{label or 'Contrasts with'}') under visual tension."
+                    )
+            elif edge.edge_type in (
+                EdgeType.support,
+                EdgeType.extension,
+                EdgeType.refinement,
+                EdgeType.dependency,
+            ):
+                acc = constraints.get(ConstraintKey.accessibility, 0.5)
+                if acc > 0.55:
+                    modified_weight *= (1 + (acc - 0.5) * 0.3)
+                    reasons.append(
+                        f"Amplified supportive relationship "
+                        f"('{label or edge.edge_type.value}') under accessibility focus."
+                    )
+            elif edge.edge_type in (
+                EdgeType.similarity,
+                EdgeType.functional_similarity,
+                EdgeType.visual_similarity,
+            ):
+                # Soften generic similarity when richer semantics exist elsewhere
+                # (weight nudge only — does not rewrite the label)
+                if constraints.get(ConstraintKey.information_density, 0.5) > 0.7:
+                    modified_weight *= 0.95
+                    reasons.append(
+                        "Slightly reduced generic similarity weight so specific "
+                        "semantic relationships remain more influential."
+                    )
+
             # Cap weight
             modified_weight = max(0.1, min(1.0, modified_weight))
             
             if abs(modified_weight - edge.weight) > 0.01:
+                label_note = f" [{label}]" if label else ""
                 effects.append(ConstraintEffect(
                     edge_id=edge.id,
                     original_weight=edge.weight,
                     modified_weight=modified_weight,
-                    reason=" ".join(reasons),
+                    reason=" ".join(reasons) + label_note,
                     derivation=DerivationLabel.SYSTEM
                 ))
             
@@ -90,9 +128,8 @@ class ConstraintEngine:
         new_graph = graph.model_copy(deep=True)
         new_graph.edges = modified_edges
         
-        # Update node importance
+        # Update node importance (pure graph math — no repository required)
         from app.services.graph_service import GraphService
-        gs = GraphService()
-        gs._update_node_importance(new_graph)
+        GraphService.update_node_importance(new_graph)
         
         return new_graph, effects

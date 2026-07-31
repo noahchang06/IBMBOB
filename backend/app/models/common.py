@@ -9,6 +9,7 @@ class DerivationLabel(str, Enum):
     SYSTEM = "SYSTEM"
     RETRIEVED = "RETRIEVED"
     AI = "AI"
+    AI_ACCEPTED = "AI_ACCEPTED"  # User-accepted (possibly edited) Granite suggestion
     MANUAL = "MANUAL"
 
 class LabeledValue(BaseModel, Generic[T]):

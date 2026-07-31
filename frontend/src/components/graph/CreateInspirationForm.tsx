@@ -4,9 +4,10 @@ import { DomainType, DOMAIN_LABELS } from '../../types';
 interface CreateInspirationFormProps {
   onClose: () => void;
   onCreate: (inspiration: any) => void;
+  error?: string | null;
 }
 
-export function CreateInspirationForm({ onClose, onCreate }: CreateInspirationFormProps) {
+export function CreateInspirationForm({ onClose, onCreate, error }: CreateInspirationFormProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [domain, setDomain] = useState<DomainType | ''>('');
@@ -67,6 +68,9 @@ export function CreateInspirationForm({ onClose, onCreate }: CreateInspirationFo
                 ))}
             </select>
           </div>
+          {error && (
+            <p className="mb-4 text-sm text-red-400">{error}</p>
+          )}
           <div className="mt-6 flex justify-end space-x-4">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-text-secondary bg-surface-2 rounded-md hover:bg-surface-3">
               Cancel

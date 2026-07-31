@@ -1,5 +1,5 @@
 // === Derivation Labels ===
-export type DerivationLabel = 'CURATED' | 'SYSTEM' | 'RETRIEVED' | 'AI';
+export type DerivationLabel = 'CURATED' | 'SYSTEM' | 'RETRIEVED' | 'AI' | 'AI_ACCEPTED' | 'MANUAL';
 
 export interface LabeledValue<T> {
   value: T;
@@ -65,9 +65,12 @@ export interface Inspiration {
 }
 
 // === Graph ===
-export type EdgeType = 
-  | 'transferable_principle' | 'functional_similarity' 
-  | 'structural_analogy' | 'visual_similarity' | 'behavioral_analogy';
+export type EdgeType =
+  | 'transferable_principle' | 'functional_similarity'
+  | 'structural_analogy' | 'visual_similarity' | 'behavioral_analogy'
+  | 'inspired_by' | 'extension' | 'refinement' | 'contrast' | 'support'
+  | 'dependency' | 'usage' | 'similarity' | 'opposition' | 'evolution'
+  | 'combination' | 'reference';
 
 export const EDGE_TYPE_COLORS: Record<EdgeType, string> = {
   transferable_principle: '#E8A87C',
@@ -75,6 +78,18 @@ export const EDGE_TYPE_COLORS: Record<EdgeType, string> = {
   structural_analogy: '#C38D9E',
   visual_similarity: '#85DCB8',
   behavioral_analogy: '#E27D60',
+  inspired_by: '#F3C178',
+  extension: '#6C8AFF',
+  refinement: '#9B59B6',
+  contrast: '#E27D60',
+  support: '#2ECC71',
+  dependency: '#5B8BA0',
+  usage: '#85DCB8',
+  similarity: '#41B3A3',
+  opposition: '#E74C3C',
+  evolution: '#C9B1FF',
+  combination: '#D4A5A5',
+  reference: '#659B5E',
 };
 
 export const EDGE_TYPE_LABELS: Record<EdgeType, string> = {
@@ -83,7 +98,36 @@ export const EDGE_TYPE_LABELS: Record<EdgeType, string> = {
   structural_analogy: 'Structural Analogy',
   visual_similarity: 'Visual Similarity',
   behavioral_analogy: 'Behavioral Analogy',
+  inspired_by: 'Inspired by',
+  extension: 'Builds on',
+  refinement: 'Refines',
+  contrast: 'Contrasts with',
+  support: 'Supports',
+  dependency: 'Depends on',
+  usage: 'Uses',
+  similarity: 'Similar to',
+  opposition: 'Opposes',
+  evolution: 'Evolves into',
+  combination: 'Combines with',
+  reference: 'References',
 };
+
+/** User-facing relationship presets (label + internal edge_type). */
+export const RELATIONSHIP_PRESETS: { label: string; edge_type: EdgeType }[] = [
+  { label: 'Inspired by', edge_type: 'inspired_by' },
+  { label: 'Builds on', edge_type: 'extension' },
+  { label: 'Refines', edge_type: 'refinement' },
+  { label: 'Contrasts with', edge_type: 'contrast' },
+  { label: 'Supports', edge_type: 'support' },
+  { label: 'Depends on', edge_type: 'dependency' },
+  { label: 'Uses', edge_type: 'usage' },
+  { label: 'Similar to', edge_type: 'similarity' },
+  { label: 'Related to', edge_type: 'similarity' },
+  { label: 'Opposes', edge_type: 'opposition' },
+  { label: 'Evolves into', edge_type: 'evolution' },
+  { label: 'Combines with', edge_type: 'combination' },
+  { label: 'References', edge_type: 'reference' },
+];
 
 export interface GraphNode {
   id: string;
@@ -102,10 +146,14 @@ export interface GraphEdge {
   target_id: string;
   edge_type: EdgeType;
   weight: number; // 0-1
+  relationship_label: string;
   relationship_description: string;
   transferable_insight: string;
   evidence: string[];
   derivation: DerivationLabel;
+  confidence?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface ReasoningGraph {
@@ -230,11 +278,40 @@ export interface ExplanationChain {
   ai_interpretation: ReasoningStep[];
 }
 
+export interface ReasoningPathNode {
+  id: string;
+  title: string;
+}
+
+export interface ReasoningPathEdge {
+  id?: string | null;
+  source: string;
+  target: string;
+  relationship_label: string;
+  relationship_description?: string;
+  derivation?: string;
+  confidence?: number | null;
+}
+
+export interface ReasoningPath {
+  nodes: ReasoningPathNode[];
+  edges: ReasoningPathEdge[];
+  prose?: string | null;
+}
+
 export interface ExplanationResponse {
-  target_type: string;
-  target_id: string;
+  request?: {
+    target_type: string;
+    target_id: string;
+    context?: Record<string, unknown>;
+  };
+  /** @deprecated legacy flat fields — prefer request.* */
+  target_type?: string;
+  target_id?: string;
   chain: ExplanationChain;
   summary: string;
+  /** Structured paths from backend relationship_analysis — do not recompute. */
+  paths?: ReasoningPath[];
 }
 
 // === Challenges ===

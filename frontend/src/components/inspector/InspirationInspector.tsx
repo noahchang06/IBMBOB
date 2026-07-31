@@ -16,18 +16,26 @@ export function InspirationInspector() {
 
   const domainColor = DOMAIN_COLORS[inspiration.domain];
 
-  // Find nodes this one connects to (for related concepts section)
-  const relatedNodes = graph
+  // Directed semantic relationships (label + provenance), not bare neighbor names
+  const relatedEdges = graph
     ? graph.edges
         .filter(e => e.source_id === selectedNode.id || e.target_id === selectedNode.id)
         .map(e => {
-          const otherId = e.source_id === selectedNode.id ? e.target_id : e.source_id;
-          return graph.nodes.find(n => n.id === otherId);
+          const outgoing = e.source_id === selectedNode.id;
+          const otherId = outgoing ? e.target_id : e.source_id;
+          const other = graph.nodes.find(n => n.id === otherId);
+          if (!other) return null;
+          return {
+            id: e.id,
+            label: e.relationship_label || e.edge_type,
+            description: e.relationship_description || '',
+            derivation: e.derivation,
+            other,
+            outgoing,
+          };
         })
-        .filter((n): n is NonNullable<typeof n> => !!n)
-        // de-duplicate
-        .filter((n, i, arr) => arr.findIndex(x => x.id === n.id) === i)
-        .slice(0, 5)
+        .filter((x): x is NonNullable<typeof x> => !!x)
+        .slice(0, 8)
     : [];
 
   const handleExplain = async () => {
@@ -35,10 +43,24 @@ export function InspirationInspector() {
     setActivePanel('explainable');
     setExplanationLoading(true);
     try {
-      const result = await api.explainNode(selectedNode.id, inspiration);
+      const result = await api.explainNode(selectedNode.id, inspiration, graph, selectedNode);
       setExplanation(result);
     } catch (err) {
       setExplainError(err instanceof Error ? err.message : 'Explanation request failed.');
+    } finally {
+      setExplanationLoading(false);
+    }
+  };
+
+  const handleRecommend = async () => {
+    setExplainError(null);
+    setActivePanel('explainable');
+    setExplanationLoading(true);
+    try {
+      const result = await api.explainRecommend(graph, [selectedNode.id]);
+      setExplanation(result);
+    } catch (err) {
+      setExplainError(err instanceof Error ? err.message : 'Recommendation request failed.');
     } finally {
       setExplanationLoading(false);
     }
@@ -110,30 +132,52 @@ export function InspirationInspector() {
         </ul>
       </div>
 
-      {/* Related Concepts — nodes connected via graph edges */}
-      {relatedNodes.length > 0 && (
+      {/* Semantic relationships — labels + provenance */}
+      {relatedEdges.length > 0 ? (
         <div>
           <h3 className="section-header">
-            Related in Graph
+            Relationships
             <span className="ml-1.5 text-accent font-mono normal-case tracking-normal">
-              ({relatedNodes.length})
+              ({relatedEdges.length})
             </span>
           </h3>
-          <div className="flex flex-wrap gap-2">
-            {relatedNodes.map(node => (
-              <span
-                key={node.id}
-                className="px-2 py-1 rounded text-xs font-medium border"
-                style={{
-                  color: DOMAIN_COLORS[node.domain],
-                  borderColor: `${DOMAIN_COLORS[node.domain]}44`,
-                  background: `${DOMAIN_COLORS[node.domain]}12`,
-                }}
+          <div className="space-y-2">
+            {relatedEdges.map(rel => (
+              <div
+                key={rel.id}
+                className="bg-surface-2 border border-border rounded-lg p-3"
               >
-                {node.label}
-              </span>
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <div className="text-sm text-text-primary">
+                    {rel.outgoing ? (
+                      <>
+                        <span className="text-text-muted">→</span>{' '}
+                        <span className="font-medium">{rel.label}</span>{' '}
+                        <span style={{ color: DOMAIN_COLORS[rel.other.domain] }}>{rel.other.label}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span style={{ color: DOMAIN_COLORS[rel.other.domain] }}>{rel.other.label}</span>{' '}
+                        <span className="font-medium">{rel.label}</span>{' '}
+                        <span className="text-text-muted">→ this</span>
+                      </>
+                    )}
+                  </div>
+                  <DerivationBadge label={rel.derivation} />
+                </div>
+                {rel.description && (
+                  <p className="text-xs text-text-secondary">{rel.description}</p>
+                )}
+              </div>
             ))}
           </div>
+        </div>
+      ) : (
+        <div>
+          <h3 className="section-header">Relationships</h3>
+          <p className="text-xs text-text-muted">
+            No meaningful semantic relationships recorded for this idea.
+          </p>
         </div>
       )}
 
@@ -148,13 +192,20 @@ export function InspirationInspector() {
       )}
 
       {/* CTA */}
-      <div className="pt-2">
+      <div className="pt-2 space-y-2">
         <button
           onClick={handleExplain}
           className="w-full py-3 bg-accent hover:bg-accent-bright text-surface-0 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Explain Reasoning with AI
+        </button>
+        <button
+          type="button"
+          onClick={handleRecommend}
+          className="w-full py-2.5 border border-border text-text-secondary hover:text-text-primary hover:bg-surface-2 rounded-lg text-sm transition-colors"
+        >
+          Recommend next idea
         </button>
       </div>
     </div>

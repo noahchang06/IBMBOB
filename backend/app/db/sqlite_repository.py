@@ -7,7 +7,7 @@ from app.config import settings
 from app.models.challenge import PresetChallenge
 from app.models.common import DomainType, DerivationLabel
 from app.models.inspiration import Inspiration
-from app.models.graph import GraphEdge, EdgeType
+from app.models.graph import GraphEdge, EdgeType, default_relationship_label
 
 class SQLiteRepository(Repository):
     def __init__(self):
@@ -75,11 +75,54 @@ class SQLiteRepository(Repository):
                     transferable_insight TEXT,
                     evidence_json TEXT,
                     derivation TEXT,
+                    relationship_label TEXT,
+                    confidence REAL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY(challenge_id) REFERENCES challenges(id)
                 )
             ''')
+            await self._migrate_edges_table(db)
             await db.commit()
-            
+
+    async def _migrate_edges_table(self, db: aiosqlite.Connection) -> None:
+        """Add semantic edge columns to existing DBs without destroying data."""
+        async with db.execute("PRAGMA table_info(edges)") as cursor:
+            existing = {row[1] for row in await cursor.fetchall()}
+
+        migrations = [
+            ("relationship_label", "ALTER TABLE edges ADD COLUMN relationship_label TEXT"),
+            ("confidence", "ALTER TABLE edges ADD COLUMN confidence REAL"),
+            # SQLite disallows non-constant defaults on ALTER ADD COLUMN
+            ("created_at", "ALTER TABLE edges ADD COLUMN created_at TIMESTAMP"),
+            ("updated_at", "ALTER TABLE edges ADD COLUMN updated_at TIMESTAMP"),
+        ]
+        for col, sql in migrations:
+            if col not in existing:
+                await db.execute(sql)
+
+        # Re-read columns after ALTER so backfill is safe on fresh migrations
+        async with db.execute("PRAGMA table_info(edges)") as cursor:
+            cols_after = {row[1] for row in await cursor.fetchall()}
+        if "relationship_label" not in cols_after:
+            return
+
+        # Backfill missing labels from edge_type defaults
+        async with db.execute(
+            "SELECT id, edge_type, relationship_label FROM edges "
+            "WHERE relationship_label IS NULL OR TRIM(relationship_label) = ''"
+        ) as cursor:
+            rows = await cursor.fetchall()
+        for edge_id, edge_type, _ in rows:
+            try:
+                label = default_relationship_label(EdgeType(edge_type))
+            except ValueError:
+                label = "Related to"
+            await db.execute(
+                "UPDATE edges SET relationship_label = ? WHERE id = ?",
+                (label, edge_id),
+            )
+
     async def save_project(self, project_id: str, name: str, challenge_id: str, graph_state: Dict[str, Any], constraint_state: Dict[str, Any]) -> None:
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute('''
@@ -162,7 +205,11 @@ class SQLiteRepository(Repository):
     async def get_inspirations_for_challenge(self, challenge_id: str) -> List[Inspiration]:
         async with aiosqlite.connect(self.db_path) as db:
             db.row_factory = aiosqlite.Row
-            async with db.execute('SELECT * FROM inspirations WHERE challenge_id = ?', (challenge_id,)) as cursor:
+            # rowid order ≈ insertion order so "most recently created" is peers[-1]
+            async with db.execute(
+                'SELECT * FROM inspirations WHERE challenge_id = ? ORDER BY rowid ASC',
+                (challenge_id,),
+            ) as cursor:
                 rows = await cursor.fetchall()
                 inspirations = []
                 for row in rows:
@@ -183,30 +230,109 @@ class SQLiteRepository(Repository):
     async def create_edge(self, challenge_id: str, edge: GraphEdge) -> None:
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute('''
-                INSERT INTO edges (id, challenge_id, source_id, target_id, edge_type, weight, relationship_description, transferable_insight, evidence_json, derivation)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (edge.id, challenge_id, edge.source_id, edge.target_id, edge.edge_type.value, edge.weight, edge.relationship_description, edge.transferable_insight, json.dumps(edge.evidence), edge.derivation.value))
+                INSERT INTO edges (
+                    id, challenge_id, source_id, target_id, edge_type, weight,
+                    relationship_description, transferable_insight, evidence_json, derivation,
+                    relationship_label, confidence, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            ''', (
+                edge.id,
+                challenge_id,
+                edge.source_id,
+                edge.target_id,
+                edge.edge_type.value,
+                edge.weight,
+                edge.relationship_description,
+                edge.transferable_insight,
+                json.dumps(edge.evidence),
+                edge.derivation.value,
+                edge.relationship_label,
+                edge.confidence,
+            ))
             await db.commit()
+
+    def _row_to_edge(self, row: aiosqlite.Row) -> GraphEdge:
+        keys = row.keys()
+        edge_type = EdgeType(row["edge_type"])
+        label = row["relationship_label"] if "relationship_label" in keys else None
+        if not label:
+            label = default_relationship_label(edge_type)
+        confidence = row["confidence"] if "confidence" in keys else None
+        created_at = row["created_at"] if "created_at" in keys else None
+        updated_at = row["updated_at"] if "updated_at" in keys else None
+        return GraphEdge(
+            id=row["id"],
+            source_id=row["source_id"],
+            target_id=row["target_id"],
+            edge_type=edge_type,
+            weight=row["weight"],
+            relationship_label=label,
+            relationship_description=row["relationship_description"] or "",
+            transferable_insight=row["transferable_insight"] or "",
+            evidence=json.loads(row["evidence_json"] or "[]"),
+            derivation=DerivationLabel(row["derivation"]),
+            confidence=confidence,
+            created_at=created_at,
+            updated_at=updated_at,
+        )
 
     async def get_edges_for_challenge(self, challenge_id: str) -> List[GraphEdge]:
         async with aiosqlite.connect(self.db_path) as db:
             db.row_factory = aiosqlite.Row
             async with db.execute('SELECT * FROM edges WHERE challenge_id = ?', (challenge_id,)) as cursor:
                 rows = await cursor.fetchall()
-                edges = []
-                for row in rows:
-                    edges.append(GraphEdge(
-                        id=row["id"],
-                        source_id=row["source_id"],
-                        target_id=row["target_id"],
-                        edge_type=EdgeType(row["edge_type"]),
-                        weight=row["weight"],
-                        relationship_description=row["relationship_description"],
-                        transferable_insight=row["transferable_insight"],
-                        evidence=json.loads(row["evidence_json"]),
-                        derivation=DerivationLabel(row["derivation"])
-                    ))
-                return edges
+                return [self._row_to_edge(row) for row in rows]
+
+    async def get_edge(self, challenge_id: str, edge_id: str) -> GraphEdge | None:
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                'SELECT * FROM edges WHERE challenge_id = ? AND id = ?',
+                (challenge_id, edge_id),
+            ) as cursor:
+                row = await cursor.fetchone()
+                return self._row_to_edge(row) if row else None
+
+    async def update_edge(self, challenge_id: str, edge: GraphEdge) -> GraphEdge | None:
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute('''
+                UPDATE edges SET
+                    edge_type = ?,
+                    weight = ?,
+                    relationship_label = ?,
+                    relationship_description = ?,
+                    transferable_insight = ?,
+                    evidence_json = ?,
+                    derivation = ?,
+                    confidence = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE challenge_id = ? AND id = ?
+            ''', (
+                edge.edge_type.value,
+                edge.weight,
+                edge.relationship_label,
+                edge.relationship_description,
+                edge.transferable_insight,
+                json.dumps(edge.evidence),
+                edge.derivation.value,
+                edge.confidence,
+                challenge_id,
+                edge.id,
+            ))
+            await db.commit()
+            if cursor.rowcount == 0:
+                return None
+        return await self.get_edge(challenge_id, edge.id)
+
+    async def delete_edge(self, challenge_id: str, edge_id: str) -> bool:
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                'DELETE FROM edges WHERE challenge_id = ? AND id = ?',
+                (challenge_id, edge_id),
+            )
+            await db.commit()
+            return cursor.rowcount > 0
 
     async def delete_challenge(self, challenge_id: str) -> None:
         async with aiosqlite.connect(self.db_path) as db:

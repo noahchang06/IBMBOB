@@ -11,6 +11,8 @@ const SYMBOLS: Record<DerivationLabel, string> = {
   RETRIEVED: '⤓',
   SYSTEM: '⚙',
   AI: '✨',
+  AI_ACCEPTED: '✓✨',
+  MANUAL: '✎',
 };
 
 export function DerivationBadge({ label, className = '' }: DerivationBadgeProps) {

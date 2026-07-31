@@ -251,17 +251,137 @@ class MockGraniteAdapter(GraniteAdapter):
     async def extract_principles(self, inspiration_description: str, target_domain: str) -> list[str]:
         return ["Mock principle 1", "Mock principle 2"]
 
-    async def explain_relationship(self, source: dict[str, Any], target: dict[str, Any], edge: dict[str, Any]) -> str:
-        return "This is a mock explanation of a relationship."
+    async def explain_relationship(
+        self,
+        source: dict[str, Any],
+        target: dict[str, Any],
+        edge: dict[str, Any],
+        graph_context: dict[str, Any] | None = None,
+    ) -> str:
+        from app.services.graph_context import relationship_label_for_edge
+        from app.services.relationship_analysis import (
+            analyze_comparison,
+            format_directed_clause,
+            provenance_phrase,
+            MISSING_RELATIONSHIP_MESSAGE,
+        )
+
+        src_name = source.get("label") or source.get("title") or source.get("name") or "source"
+        tgt_name = target.get("label") or target.get("title") or target.get("name") or "target"
+        label = relationship_label_for_edge(edge)
+        clause = format_directed_clause(src_name, label, tgt_name)
+        desc = (edge.get("relationship_description") or "").strip()
+        derivation = edge.get("derivation") or "UNKNOWN"
+        parts = [
+            f"Observed relationship: {clause}.",
+            f"Provenance: {provenance_phrase(str(derivation))}.",
+        ]
+        if desc:
+            parts.append(f"Reasoning evidence: {desc}")
+        graph = (graph_context or {}).get("_source_graph")
+        if graph and source.get("id") and target.get("id"):
+            comparison = analyze_comparison(graph, source["id"], target["id"])
+            if comparison.get("indirect_paths"):
+                parts.append("Indirect path: " + comparison["indirect_paths"][0])
+            for c in comparison.get("contradictions") or []:
+                parts.append("Contradiction: " + c["description"])
+            if not comparison.get("has_relationship") and not desc:
+                parts.append(MISSING_RELATIONSHIP_MESSAGE)
+        return " ".join(parts)
 
     async def suggest_alternatives(self, graph: dict[str, Any], constraints: dict[str, Any]) -> list[dict[str, Any]]:
-        return [{"id": "mock-alt-1", "concept": "Mock alternative concept", "derivation": "AI"}]
+        from app.services.relationship_analysis import analyze_recommendation_support
+
+        support = analyze_recommendation_support(graph)
+        if not support.get("has_support"):
+            return [{
+                "id": "mock-alt-unsupported",
+                "concept": "No grounded next idea — graph lacks supporting relationships",
+                "derivation": "AI",
+                "supported_by": [],
+            }]
+        cited = [s["prose"] for s in support["supporting_relationships"][:2]]
+        return [{
+            "id": "mock-alt-1",
+            "concept": "Extend the strongest supportive chain into a new adjacent idea",
+            "derivation": "AI",
+            "supported_by": cited,
+        }]
 
     async def identify_weak_analogies(self, edges: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return [{"critique": "This is a mock critique of a weak analogy.", "derivation": "AI"}]
 
-    async def explain_design_tradeoff(self, decision: dict[str, Any], constraints: dict[str, Any]) -> str:
+    async def explain_design_tradeoff(
+        self,
+        decision: dict[str, Any],
+        constraints: dict[str, Any],
+        graph_context: dict[str, Any] | None = None,
+    ) -> str:
+        from app.services.relationship_analysis import (
+            analyze_node_relationships,
+            MISSING_RELATIONSHIP_MESSAGE,
+        )
+
+        if decision.get("mode") == "compare" and decision.get("comparison"):
+            prose = decision["comparison"].get("prose") or MISSING_RELATIONSHIP_MESSAGE
+            if not decision["comparison"].get("has_relationship"):
+                return prose
+            return f"Comparison grounded in observed paths. {prose}"
+
+        node = decision.get("node") or {}
+        inspiration = decision.get("inspiration") or {}
+        node_id = node.get("id") or decision.get("target_id")
+        graph = (graph_context or {}).get("_source_graph") or decision.get("graph")
+        if graph and node_id:
+            analysis = analyze_node_relationships(graph, node_id)
+            name = inspiration.get("name") or node.get("label") or node_id
+            if not analysis.get("has_relationships"):
+                return (
+                    f"Idea '{name}' has no meaningful recorded relationships. "
+                    f"{MISSING_RELATIONSHIP_MESSAGE} Interpretation uses idea content only."
+                )
+            return (
+                f"Design takeaway for '{name}' is supported by its strongest relationships. "
+                f"{analysis['prose']}"
+            )
         return "This is a mock explanation of a design tradeoff."
 
     async def generate_reasoning_summary(self, graph: dict[str, Any], constraints: dict[str, Any], design_system: dict[str, Any]) -> str:
         return "This is a mock reasoning summary."
+
+    async def suggest_relationships(
+        self,
+        source_idea: dict[str, Any],
+        target_idea: dict[str, Any],
+        graph_context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        source_name = source_idea.get("title") or source_idea.get("name") or "source"
+        target_name = target_idea.get("title") or target_idea.get("name") or "target"
+        return {
+            "suggestions": [
+                {
+                    "edge_type": "extension",
+                    "relationship_label": "Builds on",
+                    "relationship_description": (
+                        f"{target_name} expands {source_name} by adding a more specific application of the same idea."
+                    ),
+                    "confidence": 0.78,
+                },
+                {
+                    "edge_type": "inspired_by",
+                    "relationship_label": "Inspired by",
+                    "relationship_description": (
+                        f"{target_name} draws creative direction from {source_name}'s core concept."
+                    ),
+                    "confidence": 0.71,
+                },
+                {
+                    "edge_type": "contrast",
+                    "relationship_label": "Contrasts with",
+                    "relationship_description": (
+                        f"{target_name} highlights a productive tension against {source_name}."
+                    ),
+                    "confidence": 0.55,
+                },
+            ]
+        }

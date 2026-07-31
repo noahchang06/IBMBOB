@@ -1,6 +1,6 @@
 import uuid
 from typing import Optional, List
-from app.models.graph import ReasoningGraph, GraphNode, GraphEdge, EdgeType
+from app.models.graph import ReasoningGraph, GraphNode, GraphEdge, EdgeType, default_relationship_label
 from app.data.knowledge_base import knowledge_base
 from app.db.repository import Repository
 from app.models.common import DerivationLabel
@@ -44,16 +44,20 @@ class GraphService:
             raw_edges = knowledge_base.get_raw_edges(challenge_id)
             for e_data in raw_edges:
                 if e_data["source_id"] in valid_insp_ids and e_data["target_id"] in valid_insp_ids:
+                    edge_type = EdgeType(e_data["edge_type"])
                     edges.append(GraphEdge(
                         id=e_data["id"],
                         source_id=f"n-{e_data['source_id']}",
                         target_id=f"n-{e_data['target_id']}",
-                        edge_type=EdgeType(e_data["edge_type"]),
+                        edge_type=edge_type,
                         weight=e_data["weight"],
+                        relationship_label=e_data.get("relationship_label")
+                            or default_relationship_label(edge_type),
                         relationship_description=e_data["relationship_description"],
                         transferable_insight=e_data["transferable_insight"],
                         evidence=e_data["evidence"],
-                        derivation=DerivationLabel.CURATED
+                        derivation=DerivationLabel.CURATED,
+                        confidence=e_data.get("confidence"),
                     ))
                 
         # Recompute node importance based on connectivity (degree centrality simplified)
@@ -64,10 +68,12 @@ class GraphService:
             edges=edges
         )
         
-        self._update_node_importance(graph)
+        self.update_node_importance(graph)
         return graph
         
-    def _update_node_importance(self, graph: ReasoningGraph):
+    @staticmethod
+    def update_node_importance(graph: ReasoningGraph):
+        """Recompute degree-centrality importance. Does not touch the repository."""
         if not graph.nodes:
             return
             
@@ -84,3 +90,7 @@ class GraphService:
         else:
             for node in graph.nodes:
                 node.importance = 0.5
+
+    # Back-compat alias for any internal callers
+    def _update_node_importance(self, graph: ReasoningGraph):
+        GraphService.update_node_importance(graph)

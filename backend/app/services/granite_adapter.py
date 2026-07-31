@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from app.models.challenge import PresetChallenge
 from app.models.inspiration import Inspiration
 
@@ -27,7 +27,13 @@ class GraniteAdapter(ABC):
         pass
     
     @abstractmethod
-    async def explain_relationship(self, source: Dict[str, Any], target: Dict[str, Any], edge: Dict[str, Any]) -> str:
+    async def explain_relationship(
+        self,
+        source: Dict[str, Any],
+        target: Dict[str, Any],
+        edge: Dict[str, Any],
+        graph_context: Optional[Dict[str, Any]] = None,
+    ) -> str:
         """Explain why two inspirations connect and what makes the connection creatively productive."""
         pass
     
@@ -42,11 +48,29 @@ class GraniteAdapter(ABC):
         pass
     
     @abstractmethod
-    async def explain_design_tradeoff(self, decision: Dict[str, Any], constraints: Dict[str, Any]) -> str:
+    async def explain_design_tradeoff(
+        self,
+        decision: Dict[str, Any],
+        constraints: Dict[str, Any],
+        graph_context: Optional[Dict[str, Any]] = None,
+    ) -> str:
         """Explain design tradeoffs when constraints conflict."""
         pass
     
     @abstractmethod  
     async def generate_reasoning_summary(self, graph: Dict[str, Any], constraints: Dict[str, Any], design_system: Dict[str, Any]) -> str:
         """Generate a markdown reasoning summary for export."""
+        pass
+
+    @abstractmethod
+    async def suggest_relationships(
+        self,
+        source_idea: Dict[str, Any],
+        target_idea: Dict[str, Any],
+        graph_context: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Suggest up to three semantic relationships from source → target.
+        Returns a dict matching RelationshipSuggestionResponse (not persisted).
+        """
         pass

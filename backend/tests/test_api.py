@@ -18,7 +18,11 @@ def test_list_challenges():
     data = response.json()
     assert "challenges" in data
     assert len(data["challenges"]) >= 1
-    assert data["challenges"][0]["id"] == "healthcare-dashboard"
+    # Seed load order is filesystem-dependent; assert curated challenges exist
+    # rather than pinning a brittle first-index identity.
+    ids = {c["id"] for c in data["challenges"]}
+    assert "healthcare-dashboard" in ids
+    assert "financial-portfolio" in ids
 
 def test_get_challenge_detail():
     response = client.get("/api/challenges/healthcare-dashboard")

@@ -125,6 +125,17 @@ html, body, #root {
   box-shadow: 0 0 12px rgba(195, 141, 158, 0.25);
   animation: ai-pulse 3s ease-in-out infinite;
 }
+.badge-ai_accepted {
+  background: rgba(195, 141, 158, 0.18);
+  color: #e8c4d0;
+  border: 1px solid rgba(195, 141, 158, 0.45);
+  box-shadow: 0 0 10px rgba(195, 141, 158, 0.2);
+}
+.badge-manual {
+  background: rgba(195, 200, 220, 0.12);
+  color: #c3c8dc;
+  border: 1px solid rgba(195, 200, 220, 0.35);
+}
 
 /* Keyframe Animations */
 @keyframes edge-flow {
